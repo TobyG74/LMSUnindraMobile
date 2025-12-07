@@ -271,7 +271,7 @@ class _JadwalScreenState extends State<JadwalScreen> {
   }
 
   List<String> _getOrderedDays() {
-    return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jum\'at', 'Sabtu', 'Minggu'];
   }
 
   @override
