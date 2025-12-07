@@ -6,13 +6,15 @@ import 'pertemuan_detail_screen.dart';
 class PertemuanListScreen extends StatefulWidget {
   final String encryptedKelasId;
   final String namaMataKuliah;
-  final String kodeMataKuliah;
+  final String hari;
+  final String waktu;
 
   const PertemuanListScreen({
     super.key,
     required this.encryptedKelasId,
     required this.namaMataKuliah,
-    required this.kodeMataKuliah,
+    required this.hari,
+    required this.waktu,
   });
 
   @override
@@ -34,9 +36,9 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final html = await _apiService.fetchPertemuanPage(widget.encryptedKelasId);
+      final html = await _apiService.fetchDashboardPage();
       
-      if (html != null) {
+      if (html.isNotEmpty) {
         _parsePertemuanList(html);
       }
     } catch (e) {
@@ -50,29 +52,48 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
     final document = html_parser.parse(html);
     final List<PertemuanItem> items = [];
 
-    // Ambil dari sidebar-menu > treeview-menu
-    final treeviewMenus = document.querySelectorAll('ul.treeview-menu');
+    final treeviews = document.querySelectorAll('li.treeview');
 
-    for (var menu in treeviewMenus) {
-      final links = menu.querySelectorAll('li a[href*="pertemuan/pke/"]');
+    for (var treeview in treeviews) {
+      final mainLink = treeview.querySelector('a');
+      if (mainLink == null) continue;
+
+      final span = mainLink.querySelector('span');
+      if (span == null) continue;
+
+      final spanText = span.text.trim();
       
-      for (var link in links) {
+      // Cek apakah spanText mengandung hari dan waktu
+      // Format spanText: "Senin 07:00-09:30 RPL*#"
+      final isMatch = spanText.toUpperCase().contains(widget.hari.toUpperCase()) && 
+                      spanText.contains(widget.waktu);
+      
+      if (!isMatch) continue;
+
+      final treeviewMenu = treeview.querySelector('ul.treeview-menu');
+      if (treeviewMenu == null) continue;
+
+      final pertemuanItems = treeviewMenu.querySelectorAll('li');
+      
+      for (var li in pertemuanItems) {
         try {
+          final link = li.querySelector('a[href*="pertemuan/pke/"]');
+          if (link == null) continue;
+
           final href = link.attributes['href'] ?? '';
           final match = RegExp(r'pertemuan/pke/(.+)$').firstMatch(href);
-          
+
           if (match != null) {
             final encryptedUrl = match.group(1) ?? '';
-            final span = link.querySelector('span');
-            final title = span?.text.trim() ?? link.text.trim();
-            
-            // Ambil nomor pertemuan dari judul
+            final pertemuanSpan = link.querySelector('span');
+            final title = pertemuanSpan?.text.trim() ?? link.text.trim();
+
             final pertemuanMatch = RegExp(r'Pertemuan\s+(\d+)', caseSensitive: false).firstMatch(title);
             int? pertemuanKe;
             if (pertemuanMatch != null) {
               pertemuanKe = int.tryParse(pertemuanMatch.group(1) ?? '0');
             }
-            
+
             if (title.isNotEmpty && encryptedUrl.isNotEmpty) {
               items.add(PertemuanItem(
                 title: title,
@@ -85,6 +106,7 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
           print('Error parsing pertemuan link: $e');
         }
       }
+      break;
     }
 
     setState(() {
@@ -96,18 +118,9 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.namaMataKuliah,
-              style: const TextStyle(fontSize: 18),
-            ),
-            Text(
-              widget.kodeMataKuliah,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-            ),
-          ],
+        title: Text(
+          widget.namaMataKuliah,
+          style: const TextStyle(fontSize: 18),
         ),
         backgroundColor: const Color(0xFF073163),
         foregroundColor: Colors.white,
@@ -143,7 +156,6 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
                                 encryptedUrl: pertemuan.encryptedUrl,
                                 title: pertemuan.title,
                                 namaMataKuliah: widget.namaMataKuliah,
-                                kodeMataKuliah: widget.kodeMataKuliah,
                                 pertemuanKe: pertemuan.pertemuanKe,
                               ),
                             ),

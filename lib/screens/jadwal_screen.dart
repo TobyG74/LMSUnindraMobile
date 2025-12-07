@@ -512,7 +512,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
                             builder: (context) => PertemuanListScreen(
                               encryptedKelasId: jadwal.encryptedKelasId,
                               namaMataKuliah: jadwal.mataKuliah,
-                              kodeMataKuliah: jadwal.kode,
+                              hari: jadwal.hari,
+                              waktu: jadwal.waktu,
                             ),
                           ),
                         );
