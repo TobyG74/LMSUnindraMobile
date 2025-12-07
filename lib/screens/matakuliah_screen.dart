@@ -16,6 +16,8 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
   List<MataKuliahItem> _mataKuliahList = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String? _npm;
+  String? _userPhotoUrl;
 
   final Map<String, IconData> _iconMap = {
     'Rekayasa Perangkat Lunak': Icons.code,
@@ -149,6 +151,23 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
 
     try {
       final html = await _apiService.fetchDashboardPage();
+      
+      final document = html_parser.parse(html);
+      final userBody = document.querySelector('li.user-body');
+      if (userBody != null) {
+        final strongTag = userBody.querySelector('strong');
+        if (strongTag != null) {
+          _npm = strongTag.text.trim();
+        }
+      }
+      
+      final userHeader = document.querySelector('li.user-header');
+      if (userHeader != null) {
+        final imgTag = userHeader.querySelector('img.img-circle');
+        if (imgTag != null) {
+          _userPhotoUrl = imgTag.attributes['src'];
+        }
+      }
       final items = _parseMataKuliahHtml(html);
       
       setState(() {
@@ -197,6 +216,7 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
 
         String dosen = '';
         String? nomorHp;
+        String? fotoDosen;
         
         final dosenName = card.querySelector('.widget-user-username');
         if (dosenName != null) {
@@ -213,19 +233,48 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
             }
           }
         }
+        
+        final fotoDosenImg = card.querySelector('img[alt="Foto Dosen"]');
+        if (fotoDosenImg != null) {
+          fotoDosen = fotoDosenImg.attributes['src'];
+        }
 
         String kelas = '';
-        final kelasBadge = card.querySelector('.pull-right.text-bold.badge');
-        if (kelasBadge != null) {
-          kelas = kelasBadge.text.trim();
+        String? ruang;
+        String? waktu;
+        
+        // Format: "Kelas: R7 |  Ruang: R.8.1-9    |  Waktu: Senin, 07:00-09:30"
+        final isiBadge = card.querySelector('div.isi_badge');
+        if (isiBadge != null) {
+          final badgeText = isiBadge.text.trim();
+          
+          // Parse Kelas
+          final kelasMatch = RegExp(r'Kelas:\s*([^|]+)').firstMatch(badgeText);
+          if (kelasMatch != null) {
+            kelas = kelasMatch.group(1)?.trim() ?? '';
+          }
+          
+          // Parse Ruang
+          final ruangMatch = RegExp(r'Ruang:\s*([^|]+)').firstMatch(badgeText);
+          if (ruangMatch != null) {
+            ruang = ruangMatch.group(1)?.trim();
+          }
+          
+          // Parse Waktu
+          final waktuMatch = RegExp(r'Waktu:\s*(.+)').firstMatch(badgeText);
+          if (waktuMatch != null) {
+            waktu = waktuMatch.group(1)?.trim();
+          }
+        }
+        
+        if (kelas.isEmpty) {
+          final kelasBadge = card.querySelector('.pull-right.text-bold.badge');
+          if (kelasBadge != null) {
+            kelas = kelasBadge.text.trim();
+          }
         }
 
-        final scheduleLabel = card.querySelector('.label.text-green');
-        if (scheduleLabel != null) {
-          final scheduleText = scheduleLabel.text.trim();
-        }
-
-        String semester = '7'; 
+        String semester = '1';
         String sks = '3'; 
 
         if (nama.isNotEmpty && kode.isNotEmpty) {
@@ -240,13 +289,15 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
             sks: sks,
             dosen: dosen,
             nomorHp: nomorHp,
+            fotoDosen: fotoDosen,
+            ruang: ruang,
+            waktu: waktu,
             encryptedKelasId: encryptedKelasId,
             icon: icon,
             color: color,
           ));
         }
       } catch (e) {
-        print('Error parsing mata kuliah card: $e');
         continue;
       }
     }
@@ -325,17 +376,6 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _mataKuliahList.isNotEmpty && _mataKuliahList[0].semester.isNotEmpty
-                                    ? 'Semester ${_mataKuliahList[0].semester}'
-                                    : 'Mata Kuliah',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
                                 '${_mataKuliahList.length} Mata Kuliah',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
@@ -381,6 +421,9 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                 sks: mk.sks,
                 dosenPengampu: mk.dosen,
                 nomorHpDosen: mk.nomorHp,
+                fotoDosen: mk.fotoDosen,
+                ruang: mk.ruang,
+                waktu: mk.waktu,
               ),
             ),
           );
@@ -424,18 +467,6 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: _buildChip(
-                            Icons.person,
-                            mk.dosen,
-                            Colors.blue,
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -444,12 +475,16 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                           'Kelas ${mk.kelas}',
                           Colors.green,
                         ),
-                        const SizedBox(width: 8),
-                        _buildChip(
-                          Icons.book,
-                          '${mk.sks} SKS',
-                          Colors.orange,
-                        ),
+                        if (mk.waktu != null && mk.waktu!.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: _buildChip(
+                              Icons.schedule,
+                              mk.waktu!,
+                              Colors.orange,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],

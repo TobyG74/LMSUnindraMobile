@@ -9,6 +9,9 @@ class MataKuliahDetailScreen extends StatelessWidget {
   final String sks;
   final String dosenPengampu;
   final String? nomorHpDosen;
+  final String? fotoDosen;
+  final String? ruang;
+  final String? waktu;
 
   const MataKuliahDetailScreen({
     super.key,
@@ -19,6 +22,9 @@ class MataKuliahDetailScreen extends StatelessWidget {
     required this.sks,
     required this.dosenPengampu,
     this.nomorHpDosen,
+    this.fotoDosen,
+    this.ruang,
+    this.waktu,
   });
 
   String _formatPhoneNumber(String phone) {
@@ -133,10 +139,14 @@ class MataKuliahDetailScreen extends StatelessWidget {
                   Row(
                     children: [
                       _buildHeaderChip(Icons.class_, kelas),
-                      const SizedBox(width: 8),
-                      _buildHeaderChip(Icons.calendar_today, 'Semester $semester'),
-                      const SizedBox(width: 8),
-                      _buildHeaderChip(Icons.book, '$sks SKS'),
+                      if (ruang != null && ruang!.isNotEmpty) ...[  
+                        const SizedBox(width: 8),
+                        _buildHeaderChip(Icons.room, ruang!),
+                      ],
+                      if (waktu != null && waktu!.isNotEmpty) ...[  
+                        const SizedBox(width: 8),
+                        _buildHeaderChip(Icons.schedule, waktu!),
+                      ],
                     ],
                   ),
                 ],
@@ -160,18 +170,23 @@ class MataKuliahDetailScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF073163).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.person,
-                                  color: Color(0xFF073163),
-                                  size: 28,
-                                ),
-                              ),
+                              fotoDosen != null && fotoDosen!.isNotEmpty
+                                ? CircleAvatar(
+                                    radius: 28,
+                                    backgroundImage: NetworkImage(fotoDosen!),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF073163).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: Color(0xFF073163),
+                                      size: 28,
+                                    ),
+                                  ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
@@ -244,23 +259,39 @@ class MataKuliahDetailScreen extends StatelessWidget {
                     childAspectRatio: 1.6,
                     children: [
                       _buildInfoCard(
-                        icon: Icons.schedule,
-                        title: 'Semester',
-                        value: semester,
-                        color: Colors.blue,
-                      ),
-                      _buildInfoCard(
-                        icon: Icons.credit_card,
-                        title: 'SKS',
-                        value: sks,
-                        color: Colors.green,
-                      ),
-                      _buildInfoCard(
                         icon: Icons.meeting_room,
                         title: 'Kelas',
                         value: kelas,
-                        color: Colors.orange,
+                        color: Colors.blue,
                       ),
+                      if (ruang != null && ruang!.isNotEmpty)
+                        _buildInfoCard(
+                          icon: Icons.room,
+                          title: 'Ruang Kelas',
+                          value: ruang!,
+                          color: Colors.green,
+                        )
+                      else
+                        _buildInfoCard(
+                          icon: Icons.room,
+                          title: 'Ruang Kelas',
+                          value: '-',
+                          color: Colors.green,
+                        ),
+                      if (waktu != null && waktu!.isNotEmpty)
+                        _buildInfoCard(
+                          icon: Icons.schedule,
+                          title: 'Waktu',
+                          value: waktu!,
+                          color: Colors.orange,
+                        )
+                      else
+                        _buildInfoCard(
+                          icon: Icons.schedule,
+                          title: 'Waktu',
+                          value: '-',
+                          color: Colors.orange,
+                        ),
                       _buildInfoCard(
                         icon: Icons.code,
                         title: 'Kode MK',

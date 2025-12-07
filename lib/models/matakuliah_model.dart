@@ -8,6 +8,9 @@ class MataKuliahItem {
   final String sks;
   final String dosen;
   final String? nomorHp;
+  final String? fotoDosen;
+  final String? ruang;
+  final String? waktu;
   final String encryptedKelasId;
   final IconData icon;
   final Color color;
@@ -20,6 +23,9 @@ class MataKuliahItem {
     required this.sks,
     required this.dosen,
     this.nomorHp,
+    this.fotoDosen,
+    this.ruang,
+    this.waktu,
     required this.encryptedKelasId,
     this.icon = Icons.book,
     this.color = Colors.blue,
