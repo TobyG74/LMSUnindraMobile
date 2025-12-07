@@ -279,7 +279,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Jadwal Kuliah'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: const Color(0xFF073163),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
