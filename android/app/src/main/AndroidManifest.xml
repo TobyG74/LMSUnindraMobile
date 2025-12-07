@@ -24,7 +24,7 @@
     </queries>
     
     <application
-        android:label="lms_unindra"
+        android:label="LMS Unindra"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

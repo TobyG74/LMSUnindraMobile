@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.lms_unindra"
+    namespace = "com.tobz.lmsunindra"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.lms_unindra"
+        applicationId = "com.tobz.lmsunindra"
         minSdkVersion = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
