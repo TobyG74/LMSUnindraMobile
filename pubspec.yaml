@@ -1,7 +1,7 @@
 name: lms_unindra
 description: A Flutter application for LMS UNINDRA
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -24,6 +24,7 @@ dependencies:
   open_filex: ^4.3.4
   url_launcher: ^6.1.14
   permission_handler: ^11.3.1
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
