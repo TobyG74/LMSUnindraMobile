@@ -29,8 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _isLoadingCaptcha = false;
-  bool _autoSolvingCaptcha = false;
   bool _isFirstLoad = true;
   
   Uint8List? _captchaImageBytes;
@@ -80,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadCaptcha() async {
     setState(() {
-      _isLoadingCaptcha = true;
       _captchaController.clear();
     });
 
@@ -88,29 +85,19 @@ class _LoginScreenState extends State<LoginScreen> {
       final captchaBytes = await _apiService.fetchCaptchaImage();
       setState(() {
         _captchaImageBytes = captchaBytes;
-        _isLoadingCaptcha = false;
       });
       
       await _autoSolveCaptcha();
-    } catch (e) {
-      setState(() {
-        _isLoadingCaptcha = false;
-      });
-    }
+    } catch (e) {}
   }
 
   Future<void> _autoSolveCaptcha() async {
     if (_captchaImageBytes == null) return;
 
-    setState(() {
-      _autoSolvingCaptcha = true;
-    });
-
     try {
       final result = await _captchaService.solveCaptcha(_captchaImageBytes!);
       setState(() {
         _captchaController.text = result;
-        _autoSolvingCaptcha = false;
       });
       
       if (_isFirstLoad && mounted && result != '0' && _usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
@@ -120,11 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
           await _handleLogin();
         }
       }
-    } catch (e) {
-      setState(() {
-        _autoSolvingCaptcha = false;
-      });
-    }
+    } catch (e) {}
   }
 
   Future<void> _handleLogin() async {
@@ -171,6 +154,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Username atau password salah'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
         await _loadCaptcha();
       }
     }
@@ -263,6 +253,64 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'Instagram',
                 url: 'https://instagram.com/ini.tobz',
               ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              const Text(
+                'Terima kasih kepada:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.bug_report, size: 16, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Tester',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• Rahmad Supandi',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLinkButton(
+                      icon: Icons.camera_alt,
+                      label: '@siorxplane',
+                      url: 'https://instagram.com/siorxplane',
+                      compact: true,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '• Ahmad Dandi Subhani',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLinkButton(
+                      icon: Icons.camera_alt,
+                      label: '@dandisubhani_',
+                      url: 'https://instagram.com/dandisubhani_',
+                      compact: true,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -280,6 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required String label,
     required String url,
+    bool compact = false,
   }) {
     return InkWell(
       onTap: () async {
@@ -302,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: compact ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
@@ -310,18 +359,19 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.blue.shade700, size: 20),
-            const SizedBox(width: 12),
+            Icon(icon, color: Colors.blue.shade700, size: compact ? 16 : 20),
+            SizedBox(width: compact ? 8 : 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
                   color: Colors.blue.shade700,
                   fontWeight: FontWeight.w500,
+                  fontSize: compact ? 13 : 14,
                 ),
               ),
             ),
-            Icon(Icons.open_in_new, color: Colors.blue.shade700, size: 18),
+            Icon(Icons.open_in_new, color: Colors.blue.shade700, size: compact ? 14 : 18),
           ],
         ),
       ),
