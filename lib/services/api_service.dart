@@ -878,6 +878,7 @@ class ApiService {
           'deadline': getTableValue('Akhir Submit'),
           'remaining': getTableValue('Sisa Waktu'),
           'file_uploaded': getTableValue('File Upload'),
+          'upload_time': getTableValue('Waktu Upload'),
           'tokens': tokens,
         };
       }

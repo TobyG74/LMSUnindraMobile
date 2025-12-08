@@ -183,6 +183,10 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                               _buildInfoRow('Sisa Waktu', _assignmentData!['remaining'] ?? '-'),
                               const Divider(height: 24),
                               _buildInfoRow('File Upload', _assignmentData!['file_uploaded'] ?? '-'),
+                              if (_assignmentData!['upload_time'] != null && _assignmentData!['upload_time'] != '-') ...[
+                                const Divider(height: 24),
+                                _buildInfoRow('Waktu Upload', _assignmentData!['upload_time'] ?? '-'),
+                              ],
                             ],
                           ),
                         ),
