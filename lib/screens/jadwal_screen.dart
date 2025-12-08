@@ -25,7 +25,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Sistem Berbasis Pengetahuan': Icons.storage,
     'Filsafat Ilmu': Icons.school,
     'E-Commerce': Icons.shopping_cart,
-    'Komputer Grafis': Icons.brush,
     'Komputer Grafik': Icons.brush,
     'Keamanan Komputer': Icons.security,
     'Algoritma': Icons.account_tree,
@@ -56,20 +55,15 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Pemrograman Visual': Icons.visibility,
     'Pemrograman Web Lanjut': Icons.web,
     'Penambangan Data': Icons.data_usage,
-    'Penulisan Ilmiah 1': Icons.article,
-    'Penulisan Ilmiah 2': Icons.description,
+    'Penulisan Ilmiah': Icons.article,
     'Teknik Kompilasi': Icons.build,
-    'Teknik Kompilasi 2': Icons.construction,
     'Ilmu Sosial dan Budaya Dasar': Icons.public,
-    'Kecakapan Antar Personal (Interpersonal Skilll)': Icons.people,
     'Kecakapan Antar Personal': Icons.people,
     'Kewirausahaan': Icons.store,
-    'Pemrograman Berorientasi Objek 1': Icons.class_,
-    'Pemrograman Berorientasi Objek 2': Icons.class_,
+    'Pemrograman Berorientasi Objek': Icons.class_,
     'Pemrograman Web Dasar': Icons.web_asset,
     'Sistem Operasi': Icons.settings_applications,
     'Statistika Lanjut': Icons.insights,
-    'Teori Bahasa Automata': Icons.abc,
     'Teori Bahasa dan Automata': Icons.abc,
     'Analisa dan Perancangan Sistem Informasi': Icons.design_services,
     'Jaringan Syaraf Tiruan': Icons.psychology_alt,
@@ -87,7 +81,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Sistem Berbasis Pengetahuan': Colors.purple,
     'Filsafat Ilmu': Colors.teal,
     'E-Commerce': Colors.pink,
-    'Komputer Grafis': Colors.indigo,
     'Komputer Grafik': Colors.indigo,
     'Keamanan Komputer': Colors.red,
     'Algoritma': Colors.deepPurple,
@@ -125,7 +118,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Pemrograman Web Dasar': Colors.lightBlue,
     'Sistem Operasi': Colors.indigo,
     'Statistika Lanjut': Colors.teal,
-    'Teori Bahasa Automata': Colors.orange,
     'Teori Bahasa dan Automata': Colors.orange,
     'Analisa dan Perancangan Sistem Informasi': Colors.blue,
     'Jaringan Syaraf Tiruan': Colors.purple,
@@ -274,6 +266,12 @@ class _JadwalScreenState extends State<JadwalScreen> {
     return ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jum\'at', 'Sabtu', 'Minggu'];
   }
 
+  String _getCurrentDay() {
+    final now = DateTime.now();
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jum\'at', 'Sabtu'];
+    return days[now.weekday % 7];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -378,6 +376,27 @@ class _JadwalScreenState extends State<JadwalScreen> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
+                      if (hari == _getCurrentDay()) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Hari ini',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
