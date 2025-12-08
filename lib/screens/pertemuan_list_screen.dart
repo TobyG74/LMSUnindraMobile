@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import 'pertemuan_detail_screen.dart';
 
@@ -25,11 +26,28 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<PertemuanItem> _pertemuanList = [];
+  Set<String> _openedPertemuan = {};
 
   @override
   void initState() {
     super.initState();
+    _loadOpenedPertemuan();
     _loadPertemuanList();
+  }
+
+  Future<void> _loadOpenedPertemuan() async {
+    final prefs = await SharedPreferences.getInstance();
+    final opened = prefs.getStringList('opened_pertemuan') ?? [];
+    setState(() {
+      _openedPertemuan = opened.toSet();
+    });
+  }
+
+  Future<void> _markPertemuanAsOpened(String encryptedUrl) async {
+    final prefs = await SharedPreferences.getInstance();
+    _openedPertemuan.add(encryptedUrl);
+    await prefs.setStringList('opened_pertemuan', _openedPertemuan.toList());
+    setState(() {});
   }
 
   Future<void> _loadPertemuanList() async {
@@ -136,6 +154,12 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
                   itemCount: _pertemuanList.length,
                   itemBuilder: (context, index) {
                     final pertemuan = _pertemuanList[index];
+                    final maxPertemuanKe = _pertemuanList
+                        .where((p) => p.pertemuanKe != null)
+                        .map((p) => p.pertemuanKe!)
+                        .fold<int>(0, (max, current) => current > max ? current : max);
+                    final isLatest = pertemuan.pertemuanKe == maxPertemuanKe && maxPertemuanKe > 0;
+                    final isNew = isLatest && !_openedPertemuan.contains(pertemuan.encryptedUrl);
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
@@ -146,20 +170,45 @@ class _PertemuanListScreenState extends State<PertemuanListScreen> {
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                        title: Text(pertemuan.title),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PertemuanDetailScreen(
-                                encryptedUrl: pertemuan.encryptedUrl,
-                                title: pertemuan.title,
-                                namaMataKuliah: widget.namaMataKuliah,
-                                pertemuanKe: pertemuan.pertemuanKe,
+                        title: Row(
+                          children: [
+                            Expanded(child: Text(pertemuan.title)),
+                            if (isNew) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Baru',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
+                            ],
+                          ],
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () async {
+                          await _markPertemuanAsOpened(pertemuan.encryptedUrl);
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PertemuanDetailScreen(
+                                  encryptedUrl: pertemuan.encryptedUrl,
+                                  title: pertemuan.title,
+                                  namaMataKuliah: widget.namaMataKuliah,
+                                  pertemuanKe: pertemuan.pertemuanKe,
+                                ),
+                              ),
+                            );
+                          }
                         },
                       ),
                     );

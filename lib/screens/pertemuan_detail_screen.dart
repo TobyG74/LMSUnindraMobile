@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
 import '../models/pertemuan_model.dart';
+import 'assignment_screen.dart';
 
 class PertemuanDetailScreen extends StatefulWidget {
   final String? encryptedUrl;
@@ -347,6 +348,41 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                   title = linkText;
                 }
                 final match = RegExp(r'member_forum/kelas/(.+)$').firstMatch(href);
+                if (match != null) {
+                  externalUrl = match.group(1);
+                }
+                break;
+              }
+            }
+          } else if (iconClass.contains('fa-video-camera')) {
+            type = 'gmeet';
+            icon = 'video_call';
+            
+            final allLinks = firstDiv.querySelectorAll('a[onclick*="display_modal"]');
+            
+            for (var link in allLinks) {
+              final linkText = link.text.trim();
+              
+              if (linkText.isNotEmpty) {
+                // Cek link Google Meet
+                if (linkText.toLowerCase().contains('google meet')) {
+                  if (linkText.contains(':')) {
+                    final parts = linkText.split(':');
+                    if (parts.length > 1) {
+                      final urlPart = parts.sublist(1).join(':').trim();
+                      title = urlPart;
+                    } else {
+                      title = linkText;
+                    }
+                  } else {
+                    title = linkText;
+                  }
+                } else {
+                  title = linkText;
+                }
+                
+                final onClick = link.attributes['onclick'] ?? link.attributes['onClick'] ?? '';
+                final match = RegExp(r"display_modal\('https://lms\.unindra\.ac\.id/member_url/kelas_gmeet/([^']+)'").firstMatch(onClick);
                 if (match != null) {
                   externalUrl = match.group(1);
                 }
@@ -711,49 +747,136 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     );
   }
 
-  Future<void> _handleAssignmentAction(MateriItem item) async {
+  Future<void> _handleGoogleMeetAction(MateriItem item) async {
+    if (item.url == null) return;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item.title),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.description,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.orange.shade700),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Fitur submit tugas akan segera hadir',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Mengambil link Google Meet...'),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
-        ],
+      ),
+    );
+
+    try {
+      final realUrl = await _apiService.fetchGoogleMeetUrl(item.url!);
+      
+      if (mounted) Navigator.pop(context);
+      
+      if (realUrl != null && realUrl.isNotEmpty) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.video_call, color: Colors.green.shade600),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('Google Meet')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item.description.isNotEmpty) ...[
+                    Text(
+                      item.description,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, color: Colors.green.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            realUrl,
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 13,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tutup'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final url = Uri.parse(realUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      _showSnackBar('Tidak dapat membuka Google Meet');
+                    }
+                  },
+                  icon: const Icon(Icons.video_call),
+                  label: const Text('Buka Google Meet'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          _showSnackBar('Link Google Meet tidak ditemukan');
+        }
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        _showSnackBar('Error mengambil link Google Meet: $e');
+      }
+    }
+  }
+
+  Future<void> _handleAssignmentAction(MateriItem item) async {
+    if (item.url == null) {
+      _showSnackBar('URL assignment tidak ditemukan');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AssignmentScreen(
+          encryptedUrl: item.url!,
+          title: item.title,
+        ),
       ),
     );
   }
@@ -786,6 +909,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         return Icons.link;
       case 'forum':
         return Icons.forum;
+      case 'video_call':
+        return Icons.video_call;
       default:
         return Icons.description;
     }
@@ -813,6 +938,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         return Colors.green;
       case 'forum':
         return Colors.deepPurple;
+      case 'gmeet':
+        return Colors.green.shade600;
       default:
         return Colors.grey;
     }
@@ -859,6 +986,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                             _handleUrlAction(item);
                           } else if (item.type == 'forum') {
                             _handleForumAction(item);
+                          } else if (item.type == 'gmeet') {
+                            _handleGoogleMeetAction(item);
                           } else if (item.downloadUrl != null) {
                             _handleFileAction(item);
                           }
