@@ -16,8 +16,6 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
   List<MataKuliahItem> _mataKuliahList = [];
   bool _isLoading = true;
   String? _errorMessage;
-  String? _npm;
-  String? _userPhotoUrl;
 
   final Map<String, IconData> _iconMap = {
     'Rekayasa Perangkat Lunak': Icons.code,
@@ -151,23 +149,6 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
 
     try {
       final html = await _apiService.fetchDashboardPage();
-      
-      final document = html_parser.parse(html);
-      final userBody = document.querySelector('li.user-body');
-      if (userBody != null) {
-        final strongTag = userBody.querySelector('strong');
-        if (strongTag != null) {
-          _npm = strongTag.text.trim();
-        }
-      }
-      
-      final userHeader = document.querySelector('li.user-header');
-      if (userHeader != null) {
-        final imgTag = userHeader.querySelector('img.img-circle');
-        if (imgTag != null) {
-          _userPhotoUrl = imgTag.attributes['src'];
-        }
-      }
       final items = _parseMataKuliahHtml(html);
       
       setState(() {

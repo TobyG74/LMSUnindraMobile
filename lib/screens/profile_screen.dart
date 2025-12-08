@@ -344,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           SizedBox(
             height: 50,
             child: ElevatedButton(
-              onPressed: _isSavingPassword ? null : _changePassword,
+              onPressed: _isSavingProfile ? null : _saveProfile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF073163),
                 foregroundColor: Colors.white,

@@ -1,15 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:html/parser.dart' as html_parser;
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'jadwal_screen.dart';
 import 'presensi_screen.dart';
 import 'profile_screen.dart';
 import 'matakuliah_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final ApiService _apiService = ApiService();
+  String? _userName;
+  String? _userPhotoUrl;
+  bool _isLoadingUserData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final html = await _apiService.fetchDashboardPage();
+      final document = html_parser.parse(html);
+      
+      final userHeader = document.querySelector('li.user-header');
+      if (userHeader != null) {
+        final pTag = userHeader.querySelector('p');
+        if (pTag != null) {
+          _userName = pTag.text.trim();
+        }
+        
+        final imgTag = userHeader.querySelector('img.img-circle');
+        if (imgTag != null) {
+          _userPhotoUrl = imgTag.attributes['src'];
+        }
+      }
+      
+      setState(() {
+        _isLoadingUserData = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingUserData = false;
+      });
+    }
+  }
 
   void _showAboutDialog(BuildContext context) {
     showDialog(
@@ -91,6 +137,66 @@ class DashboardScreen extends StatelessWidget {
                 label: 'Instagram',
                 url: 'https://instagram.com/ini.tobz',
               ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              const Text(
+                'Terima kasih kepada:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.bug_report, size: 16, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Tester',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• Rahmad Supandi',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLinkButton(
+                      context,
+                      icon: Icons.camera_alt,
+                      label: 'Instagram',
+                      url: 'https://instagram.com/siorxplane',
+                      compact: true,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '• Ahmad Dandi Subhani',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLinkButton(
+                      context,
+                      icon: Icons.camera_alt,
+                      label: 'Instagram',
+                      url: 'https://instagram.com/dandisubhani_',
+                      compact: true,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -109,6 +215,7 @@ class DashboardScreen extends StatelessWidget {
     required IconData icon,
     required String label,
     required String url,
+    bool compact = false,
   }) {
     return InkWell(
       onTap: () async {
@@ -131,7 +238,7 @@ class DashboardScreen extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: compact ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
@@ -139,18 +246,19 @@ class DashboardScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.blue.shade700, size: 20),
-            const SizedBox(width: 12),
+            Icon(icon, color: Colors.blue.shade700, size: compact ? 16 : 20),
+            SizedBox(width: compact ? 8 : 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
                   color: Colors.blue.shade700,
                   fontWeight: FontWeight.w500,
+                  fontSize: compact ? 13 : 14,
                 ),
               ),
             ),
-            Icon(Icons.open_in_new, color: Colors.blue.shade700, size: 18),
+            Icon(Icons.open_in_new, color: Colors.blue.shade700, size: compact ? 14 : 18),
           ],
         ),
       ),
@@ -208,27 +316,82 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Selamat Datang!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                child: _isLoadingUserData
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          _userPhotoUrl != null
+                              ? CircleAvatar(
+                                  radius: 35,
+                                  backgroundColor: Colors.white,
+                                  child: ClipOval(
+                                    child: Image.network(
+                                      _userPhotoUrl!,
+                                      width: 70,
+                                      height: 70,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.person,
+                                          size: 40,
+                                          color: Color(0xFF073163),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                )
+                              : const CircleAvatar(
+                                  radius: 35,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Color(0xFF073163),
+                                  ),
+                                ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Selamat Datang!',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                if (_userName != null)
+                                  Text(
+                                    _userName!,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    'Login berhasil ke LMS UNINDRA',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Login berhasil ke LMS UNINDRA',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
             
