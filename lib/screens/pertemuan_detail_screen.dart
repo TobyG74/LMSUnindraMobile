@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
 import '../models/pertemuan_model.dart';
 import 'assignment_screen.dart';
+import 'forum_screen.dart';
 
 class PertemuanDetailScreen extends StatefulWidget {
   final String? encryptedUrl;
@@ -666,83 +667,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
   Future<void> _handleForumAction(MateriItem item) async {
     if (item.url == null) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.forum, color: Colors.deepPurple),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('Forum Diskusi')),
-          ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ForumScreen(
+          encryptedUrl: item.url!,
+          title: item.title,
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (item.description.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  item.description,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.deepPurple.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.deepPurple.shade700),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Forum diskusi akan dibuka di browser eksternal',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              Navigator.pop(context);
-              final forumUrl = 'https://lms.unindra.ac.id/member_forum/kelas/${item.url!}';
-              final uri = Uri.parse(forumUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
-                _showSnackBar('Tidak dapat membuka forum');
-              }
-            },
-            icon: const Icon(Icons.open_in_browser),
-            label: const Text('Buka Forum'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }

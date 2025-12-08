@@ -33,7 +33,6 @@ class ApiService {
       validateStatus: (status) => status! < 500,
     ));
   }
-  // Ambil token CSRF dari halaman login
   Future<LoginFormData> fetchLoginPage() async {
     try {
       final response = await _dio.get('/login_new');
@@ -202,7 +201,7 @@ class ApiService {
           }
         }
         
-        // Cek kalo udah masuk halaman member
+        // Cek udah masuk halaman member apa belum
         if (responseData.contains('user_level') && 
             responseData.contains('Member | LMS UNINDRA')) {
           print('✓ Login successful - detected member page');
@@ -805,7 +804,6 @@ class ApiService {
       if (response.statusCode == 200) {
         final html = response.data as String;
         
-        // Extract Google Meet URL from HTML
         final match = RegExp(r'https://meet\.google\.com/[a-z\-]+').firstMatch(html);
         if (match != null) {
           final url = match.group(0) ?? '';
@@ -850,7 +848,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final document = html_parser.parse(response.data);
         
-        // Extract tokens
+        // Ambil token hidden
         final tokens = <String, String>{};
         for (final fieldName in ['h_id_tugas', 'h_kode', 'h_id_aktifitas']) {
           final input = document.querySelector('input#$fieldName');
@@ -859,7 +857,7 @@ class ApiService {
           }
         }
 
-        // Helper function to extract table values
+        // Fungsi buat ambil nilai dari tabel
         String getTableValue(String label) {
           final allTh = document.querySelectorAll('th');
           for (final th in allTh) {
@@ -931,7 +929,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        // Clean up alert from response
+        // Bersiin alert dari response
         final result = response.data.toString()
             .replaceAll(RegExp(r"<script>alert\('"), '')
             .replaceAll(RegExp(r"'\);</script>"), '')
@@ -970,6 +968,279 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching dashboard: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchForumDetail(String encryptedUrl) async {
+    try {
+      String cookieHeader = '';
+      if (_ciSession != null) {
+        cookieHeader = 'ci_session=$_ciSession';
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('colek_member_remember') ?? false;
+      if (remember) {
+        final username = prefs.getString('colek_member_username');
+        final password = prefs.getString('colek_member_pswd');
+        if (username != null && password != null) {
+          if (cookieHeader.isNotEmpty) cookieHeader += '; ';
+          cookieHeader += 'colek_member_username=$username; colek_member_pswd=$password; colek_member_remember=1';
+        }
+      }
+
+      final response = await _dio.get(
+        '/member_forum/kelas/$encryptedUrl',
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final document = html_parser.parse(response.data);
+        
+        // Ambil post utama
+        final mainPost = <String, dynamic>{};
+        final userBlock = document.querySelector('.user-block');
+        if (userBlock != null) {
+          final authorName = userBlock.querySelector('.username a')?.text.trim() ?? '';
+          final authorImgRaw = userBlock.querySelector('img')?.attributes['src'] ?? '';
+          final createdDate = userBlock.querySelector('.description')?.text.replaceAll('Dibuat - ', '').trim() ?? '';
+          
+          // Cek apakah foto valid (bukan placeholder atau error)
+          String authorImg = '';
+          if (authorImgRaw.isNotEmpty && 
+              !authorImgRaw.contains('no-image') && 
+              !authorImgRaw.contains('default') &&
+              !authorImgRaw.contains('placeholder')) {
+            authorImg = authorImgRaw.startsWith('http') ? authorImgRaw : 'https://lms.unindra.ac.id/$authorImgRaw';
+          }
+          
+          mainPost['author_name'] = authorName;
+          mainPost['author_img'] = authorImg;
+          mainPost['created_date'] = createdDate;
+        }
+        
+        final forumTitle = document.querySelector('.attachment-heading')?.text.trim() ?? '';
+        final forumContent = document.querySelector('.callout p')?.text.trim() ?? '';
+        
+        mainPost['title'] = forumTitle;
+        mainPost['content'] = forumContent;
+        
+        // Ambil data button reply
+        final mainReplyBtn = document.querySelector('button[onclick*="pop_form_reply"]');
+        if (mainReplyBtn != null) {
+          final onclick = mainReplyBtn.attributes['onclick'] ?? '';
+          final regex = RegExp(r"pop_form_reply\('([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)'\)");
+          final match = regex.firstMatch(onclick);
+          if (match != null) {
+            mainPost['parent_id'] = match.group(1);
+            mainPost['kd_jdw_enc'] = match.group(2);
+            mainPost['id_aktifitas'] = match.group(3);
+            mainPost['reply_id'] = match.group(4);
+            mainPost['forum_nama'] = match.group(5);
+          }
+        }
+        
+        // Ambil semua balasan
+        final replies = <Map<String, dynamic>>[];
+        final replyElements = document.querySelectorAll('.box-comments .comment-text');
+        
+        for (final replyElem in replyElements) {
+          final reply = <String, dynamic>{};
+          
+          final date = replyElem.querySelector('.username .text-muted.pull-right')?.text.trim() ?? '';
+          
+          final usernameElem = replyElem.querySelector('.username');
+          String username = '';
+          if (usernameElem != null) {
+            final usernameClone = usernameElem.clone(true);
+            final dateInUsername = usernameClone.querySelector('.text-muted.pull-right');
+            if (dateInUsername != null) {
+              dateInUsername.remove();
+            }
+            username = usernameClone.text.trim();
+          }
+          
+          final messageElem = replyElem.querySelector('p, div');
+          String message = '';
+          if (messageElem != null) {
+            message = messageElem.text.trim();
+          }
+          
+          final imgElem = replyElem.parent?.querySelector('img');
+          final authorImgRaw = imgElem?.attributes['src'] ?? '';
+          
+          // Cek apakah foto valid (bukan placeholder atau error)
+          String authorImg = '';
+          if (authorImgRaw.isNotEmpty && 
+              !authorImgRaw.contains('no-image') && 
+              !authorImgRaw.contains('default') &&
+              !authorImgRaw.contains('placeholder')) {
+            authorImg = authorImgRaw.startsWith('http') ? authorImgRaw : 'https://lms.unindra.ac.id/$authorImgRaw';
+          }
+          
+          final replyBtn = replyElem.querySelector('button[onclick*="pop_form_reply"]');
+          if (replyBtn != null) {
+            final onclick = replyBtn.attributes['onclick'] ?? '';
+            final regex = RegExp(r"pop_form_reply\('([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)'\)");
+            final match = regex.firstMatch(onclick);
+            if (match != null) {
+              reply['parent_id'] = match.group(1);
+              reply['kd_jdw_enc'] = match.group(2);
+              reply['id_aktifitas'] = match.group(3);
+              reply['reply_id'] = match.group(4);
+              reply['forum_nama'] = match.group(5);
+            }
+          }
+          
+          reply['author_name'] = username;
+          reply['author_img'] = authorImg;
+          reply['date'] = date;
+          reply['message'] = message;
+          
+          final isSubReply = replyElem.parent?.parent?.classes.contains('sub_reply') ?? false;
+          reply['is_sub_reply'] = isSubReply;
+          
+          if (message.isNotEmpty) {
+            replies.add(reply);
+          }
+        }
+        
+        // Ambil daftar user yang ikut
+        final joinedUsers = <Map<String, String>>[];
+        final userElements = document.querySelectorAll('.contacts-list-success');
+        for (final userElem in userElements) {
+          final name = userElem.querySelector('.contacts-list-name')?.text.trim() ?? '';
+          final joinDate = userElem.querySelector('.contacts-list-msg')?.text.trim() ?? '';
+          if (name.isNotEmpty) {
+            joinedUsers.add({'name': name, 'join_date': joinDate});
+          }
+        }
+        
+        return {
+          'main_post': mainPost,
+          'replies': replies,
+          'joined_users': joinedUsers,
+        };
+      }
+      
+      throw Exception('Failed to load forum detail');
+    } catch (e) {
+      print('Error fetching forum detail: $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> submitForumReply({
+    required String parentId,
+    required String kdJdwEnc,
+    required String idAktifitas,
+    required String replyId,
+    required String forumNama,
+    required String message,
+  }) async {
+    try {
+      String cookieHeader = '';
+      if (_ciSession != null) {
+        cookieHeader = 'ci_session=$_ciSession';
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('colek_member_remember') ?? false;
+      if (remember) {
+        final username = prefs.getString('colek_member_username');
+        final password = prefs.getString('colek_member_pswd');
+        if (username != null && password != null) {
+          if (cookieHeader.isNotEmpty) cookieHeader += '; ';
+          cookieHeader += 'colek_member_username=$username; colek_member_pswd=$password; colek_member_remember=1';
+        }
+      }
+
+      final formResponse = await _dio.post(
+        '/member_forum/reply',
+        data: {
+          'kd_jdw_enc': kdJdwEnc,
+          'parent_id': parentId,
+          'id_aktifitas': idAktifitas,
+          'reply_id': replyId,
+          'forum_nama': forumNama,
+          'aksi': 'reply',
+        },
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+            'Referer': '$baseUrl/member_forum/kelas/$kdJdwEnc',
+          },
+          contentType: Headers.formUrlEncodedContentType,
+        ),
+      );
+
+      final formDoc = html_parser.parse(formResponse.data);
+      final csrfToken = formDoc.querySelector('input[name="csrf_token"]')?.attributes['value'] ?? '';
+      final hiddenField = formDoc.querySelector('input[name="0e59f85937eebefad004de3c21e9c6ae"]')?.attributes['value'] ?? '';
+      final hReplyId = formDoc.querySelector('input[name="h_reply_id"]')?.attributes['value'] ?? '';
+      final hParentId = formDoc.querySelector('input[name="h_parent_id"]')?.attributes['value'] ?? '';
+      final hKode = formDoc.querySelector('input[name="h_kode"]')?.attributes['value'] ?? '';
+      final hIdAktifitas = formDoc.querySelector('input[name="h_id_aktifitas"]')?.attributes['value'] ?? '';
+      final hForumId = formDoc.querySelector('input[name="h_forum_id"]')?.attributes['value'] ?? '';
+
+      final formData = {
+        'nama_forum': 'Reply: $forumNama',
+        'keterangan': '',
+        'kd_jdw_enc': kdJdwEnc,
+        'isi_reply': '<p>$message</p>\n',
+        'h_reply_id': hReplyId,  
+        'h_parent_id': hParentId, 
+        'h_kode': hKode,  
+        'h_id_aktifitas': hIdAktifitas, 
+        'h_forum_id': hForumId, 
+        'csrf_token': csrfToken,
+        'aksi': 'reply',
+        '0e59f85937eebefad004de3c21e9c6ae': hiddenField,
+      };
+
+      final response = await _dio.post(
+        '/member_forum/reply_tambah_proses',
+        data: formData,
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+            'Referer': '$baseUrl/member_forum/kelas/$kdJdwEnc',
+            'Origin': baseUrl,
+          },
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      
+      // Kalo redirect ke member_forum/kelas berarti berhasil
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final location = response.headers.value('location');
+        if (location != null && location.contains('member_forum/kelas')) {
+          return 'Pesan berhasil dikirim';
+        }
+      }
+      
+      if (response.statusCode == 200) {
+        final responseData = response.data.toString();
+        
+        if (responseData.contains('error') || 
+            responseData.contains('gagal') || 
+            responseData.contains('failed')) {
+          throw Exception('Submit failed - server returned error');
+        }
+        
+        return 'Pesan berhasil dikirim';
+      }
+      
+      throw Exception('Failed to submit reply: Status ${response.statusCode}');
+    } catch (e) {
+      print('Error submitting forum reply: $e');
+      rethrow;
     }
   }
 }
