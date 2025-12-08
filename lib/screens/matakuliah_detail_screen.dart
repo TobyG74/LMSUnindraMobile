@@ -173,7 +173,18 @@ class MataKuliahDetailScreen extends StatelessWidget {
                               fotoDosen != null && fotoDosen!.isNotEmpty
                                 ? CircleAvatar(
                                     radius: 28,
-                                    backgroundImage: NetworkImage(fotoDosen!),
+                                    backgroundColor: Colors.grey[300],
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        fotoDosen!,
+                                        width: 56,
+                                        height: 56,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(Icons.person, size: 28, color: Color(0xFF073163));
+                                        },
+                                      ),
+                                    ),
                                   )
                                 : Container(
                                     padding: const EdgeInsets.all(12),

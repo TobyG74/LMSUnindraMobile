@@ -195,12 +195,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.white,
-                            backgroundImage: _profileData?.photoUrl != null
-                                ? NetworkImage(_profileData!.photoUrl!)
-                                : null,
-                            child: _profileData?.photoUrl == null
-                                ? const Icon(Icons.person, size: 50, color: Color(0xFF073163))
-                                : null,
+                            child: _profileData?.photoUrl != null && _profileData!.photoUrl!.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _profileData!.photoUrl!,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(Icons.person, size: 50, color: Color(0xFF073163));
+                                      },
+                                    ),
+                                  )
+                                : const Icon(Icons.person, size: 50, color: Color(0xFF073163)),
                           ),
                           const SizedBox(height: 16),
                           Text(
