@@ -353,6 +353,16 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 302 || response.statusCode == 303) {
         final responseData = response.data.toString();
+        
+        // Cek script redirect 
+        if (responseData.contains('window.location') && 
+            responseData.contains('login_new')) {
+          return {
+            'success': true,
+            'message': 'Link reset password telah dikirim ke email Anda',
+          };
+        }
+        
         final doc = html_parser.parse(responseData);
         
         final successAlerts = doc.querySelectorAll('.alert-success, .text-success, [class*="success"]');
@@ -760,6 +770,178 @@ class ApiService {
     } catch (e) {
       print('Error fetching external URL: $e');
       return null;
+    }
+  }
+
+  Future<String?> fetchGoogleMeetUrl(String encryptedUrl) async {
+    try {
+      String cookieHeader = '';
+      if (_ciSession != null) {
+        cookieHeader = 'ci_session=$_ciSession';
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('colek_member_remember') ?? false;
+      if (remember) {
+        final username = prefs.getString('colek_member_username');
+        final password = prefs.getString('colek_member_pswd');
+        if (username != null && password != null) {
+          if (cookieHeader.isNotEmpty) cookieHeader += '; ';
+          cookieHeader += 'colek_member_username=$username; colek_member_pswd=$password; colek_member_remember=1';
+        }
+      }
+
+      final response = await _dio.get(
+        '/member_url/kelas_gmeet/$encryptedUrl',
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+          },
+          followRedirects: false,
+          validateStatus: (status) => status! < 400,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final html = response.data as String;
+        
+        // Extract Google Meet URL from HTML
+        final match = RegExp(r'https://meet\.google\.com/[a-z\-]+').firstMatch(html);
+        if (match != null) {
+          final url = match.group(0) ?? '';
+          return url;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error fetching Google Meet URL: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchAssignmentDetail(String encryptedUrl) async {
+    try {
+      String cookieHeader = '';
+      if (_ciSession != null) {
+        cookieHeader = 'ci_session=$_ciSession';
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('colek_member_remember') ?? false;
+      if (remember) {
+        final username = prefs.getString('colek_member_username');
+        final password = prefs.getString('colek_member_pswd');
+        if (username != null && password != null) {
+          if (cookieHeader.isNotEmpty) cookieHeader += '; ';
+          cookieHeader += 'colek_member_username=$username; colek_member_pswd=$password; colek_member_remember=1';
+        }
+      }
+
+      final response = await _dio.get(
+        '/member_tugas/kelas/$encryptedUrl',
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final document = html_parser.parse(response.data);
+        
+        // Extract tokens
+        final tokens = <String, String>{};
+        for (final fieldName in ['h_id_tugas', 'h_kode', 'h_id_aktifitas']) {
+          final input = document.querySelector('input#$fieldName');
+          if (input != null) {
+            tokens[fieldName] = input.attributes['value'] ?? '';
+          }
+        }
+
+        // Helper function to extract table values
+        String getTableValue(String label) {
+          final allTh = document.querySelectorAll('th');
+          for (final th in allTh) {
+            if (th.text.contains(label)) {
+              final td = th.nextElementSibling;
+              if (td != null) {
+                return td.text.trim();
+              }
+            }
+          }
+          return '-';
+        }
+
+        return {
+          'status': getTableValue('Status Submit'),
+          'deadline': getTableValue('Akhir Submit'),
+          'remaining': getTableValue('Sisa Waktu'),
+          'file_uploaded': getTableValue('File Upload'),
+          'tokens': tokens,
+        };
+      }
+      
+      throw Exception('Failed to load assignment detail');
+    } catch (e) {
+      print('Error fetching assignment detail: $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadAssignment({
+    required Map<String, dynamic> tokens,
+    required String filePath,
+    required String fileName,
+  }) async {
+    try {
+      String cookieHeader = '';
+      if (_ciSession != null) {
+        cookieHeader = 'ci_session=$_ciSession';
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('colek_member_remember') ?? false;
+      if (remember) {
+        final username = prefs.getString('colek_member_username');
+        final password = prefs.getString('colek_member_pswd');
+        if (username != null && password != null) {
+          if (cookieHeader.isNotEmpty) cookieHeader += '; ';
+          cookieHeader += 'colek_member_username=$username; colek_member_pswd=$password; colek_member_remember=1';
+        }
+      }
+
+      final formData = FormData.fromMap({
+        'h_id_tugas': tokens['h_id_tugas'],
+        'h_kode': tokens['h_kode'],
+        'h_id_aktifitas': tokens['h_id_aktifitas'],
+        'btn_simpan': 'Simpan',
+        'myfile': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      final response = await _dio.post(
+        '/member_tugas/mhs_upload_file_proses',
+        data: formData,
+        options: Options(
+          headers: {
+            'Cookie': cookieHeader,
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        // Clean up alert from response
+        final result = response.data.toString()
+            .replaceAll(RegExp(r"<script>alert\('"), '')
+            .replaceAll(RegExp(r"'\);</script>"), '')
+            .trim();
+        return result.isEmpty ? 'Upload berhasil' : result;
+      }
+      
+      throw Exception('Upload failed');
+    } catch (e) {
+      print('Error uploading assignment: $e');
+      rethrow;
     }
   }
 
