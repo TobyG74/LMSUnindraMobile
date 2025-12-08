@@ -4,7 +4,36 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
 
 ## Releases
 
+- [v1.0.1 - Latest Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.1)
 - [v1.0.0 - Initial Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.0)
+
+## Screenshots
+
+### Login, Dashboard, Presensi
+<p align="center">
+  <img src="assets/login.png" alt="Login" width="200"/>
+  <img src="assets/dashboard.png" alt="Dashboard" width="200"/>
+  <img src="assets/reset_password.png" alt="Reset Password" width="200"/>
+</p>
+
+
+### Jadwal Kuliah
+<p align="center">
+  <img src="assets/jadwalkuliah.png" alt="Jadwal Kuliah" width="200"/>
+  <img src="assets/jadwalkuliah_detail.png" alt="Detail Jadwal" width="200"/>
+</p>
+
+### Mata Kuliah
+<p align="center">
+  <img src="assets/matakuliah.png" alt="Mata Kuliah" width="200"/>
+  <img src="assets/matakuliah_detail.png" alt="Detail Mata Kuliah" width="200"/>
+</p>
+
+### Pertemuan & Materi
+<p align="center">
+  <img src="assets/presensi.png" alt="Presensi" width="200"/>
+  <img src="assets/profile.png" alt="Profile" width="200"/>
+</p>
 
 ## Tabel Konten
 
@@ -21,10 +50,14 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
 - Login otomatis (captcha auto-solve pake OCR)
 - Remember me buat nyimpen login
 - Dashboard yang simpel
-- Jadwal kuliah
+- Jadwal kuliah dengan indikator hari ini
 - Presensi
-- Materi pertemuan
-- Download materi (PDF, Word, PPT, dll)
+- Materi pertemuan dengan badge "Baru"
+- Download materi (PDF, Word, PPT, Excel, dll)
+- Upload tugas dengan validasi deadline
+- Google Meet integration
+- Forum diskusi
+- URL eksternal
 
 ## Tech Stack
 
