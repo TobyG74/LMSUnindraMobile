@@ -21,12 +21,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final CaptchaService _captchaService = CaptchaService();
   
   bool _isLoading = false;
-  bool _isLoadingCaptcha = false;
-  bool _autoSolvingCaptcha = false;
   
   Uint8List? _captchaImageBytes;
   LoginFormData? _formData;
-  String? _errorMessage;
   String? _successMessage;
 
   @override
@@ -38,7 +35,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _loadFormData() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -52,14 +48,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Gagal memuat data: $e';
       });
     }
   }
 
   Future<void> _loadCaptcha() async {
     setState(() {
-      _isLoadingCaptcha = true;
       _captchaController.clear();
     });
 
@@ -67,35 +61,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final captchaBytes = await _apiService.fetchCaptchaImage();
       setState(() {
         _captchaImageBytes = captchaBytes;
-        _isLoadingCaptcha = false;
       });
       
       await _autoSolveCaptcha();
     } catch (e) {
-      setState(() {
-        _isLoadingCaptcha = false;
-        _errorMessage = 'Gagal memuat captcha: $e';
-      });
+      // Handle error silently
     }
   }
 
   Future<void> _autoSolveCaptcha() async {
     if (_captchaImageBytes == null) return;
 
-    setState(() {
-      _autoSolvingCaptcha = true;
-    });
-
     try {
       final result = await _captchaService.solveCaptcha(_captchaImageBytes!);
       setState(() {
         _captchaController.text = result;
-        _autoSolvingCaptcha = false;
       });
     } catch (e) {
-      setState(() {
-        _autoSolvingCaptcha = false;
-      });
+      // Handle error silently
     }
   }
 
@@ -114,7 +97,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
       _successMessage = null;
     });
 
