@@ -47,7 +47,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Sistem Informasi': Icons.info,
     'Statistika Dasar': Icons.bar_chart,
     'Struktur Data': Icons.data_array,
-    'UAS': Icons.assessment,
     'Akhlak dan Etika': Icons.favorite,
     'Aplikasi Kewirausahaan': Icons.business_center,
     'Interaksi Manusia dan Komputer': Icons.touch_app,
