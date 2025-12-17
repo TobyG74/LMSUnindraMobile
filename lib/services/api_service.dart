@@ -1,10 +1,15 @@
 import 'dart:typed_data';
+import 'dart:math';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/login_model.dart';
 import '../models/profile_model.dart';
+import '../models/mahasiswa_search_model.dart';
+import '../models/dosen_search_model.dart';
+import '../models/dosen_detail_model.dart';
 
 class ApiService {
   static const String baseUrl = 'https://lms.unindra.ac.id';
@@ -33,6 +38,7 @@ class ApiService {
       validateStatus: (status) => status! < 500,
     ));
   }
+
   Future<LoginFormData> fetchLoginPage() async {
     try {
       final response = await _dio.get('/login_new');
@@ -635,7 +641,11 @@ class ApiService {
     }
   }
 
-  Future<String?> downloadFile(String encryptedUrl, String savePath) async {
+  Future<String?> downloadFile(
+    String encryptedUrl, 
+    String savePath, {
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
     try {
       String cookieHeader = '';
       if (_ciSession != null) {
@@ -656,6 +666,7 @@ class ApiService {
       await _dio.download(
         '/pertemuan/force_download/$encryptedUrl',
         savePath,
+        onReceiveProgress: onReceiveProgress,
         options: Options(
           headers: {
             'Cookie': cookieHeader,
@@ -1240,6 +1251,192 @@ class ApiService {
       throw Exception('Failed to submit reply: Status ${response.statusCode}');
     } catch (e) {
       print('Error submitting forum reply: $e');
+      rethrow;
+    }
+  }
+
+  // Generate IP address acak
+  String _generateRandomIp() {
+    final random = Random();
+    return '${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}.${random.nextInt(256)}';
+  }
+
+  // Cari mahasiswa di PDDIKTI
+  Future<List<MahasiswaSearchResult>> searchMahasiswa(String query) async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://api-pddikti.kemdiktisaintek.go.id/pencarian/mhs/$query',
+        options: Options(
+          headers: {
+            'origin': 'https://pddikti.kemdiktisaintek.go.id',
+            'referer': 'https://pddikti.kemdiktisaintek.go.id/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0',
+            'x-user-ip': _generateRandomIp(),
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => MahasiswaSearchResult.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to search mahasiswa: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching mahasiswa: $e');
+      rethrow;
+    }
+  }
+
+  // Cari dosen dari SIMPEG UNINDRA
+  Future<List<DosenSearchResult>> searchDosen(String query) async {
+    try {
+      final dio = Dio();
+      final formData = FormData.fromMap({
+        'nidn_nama': query,
+        'prodi': '',
+      });
+
+      final response = await dio.post(
+        'https://simpeg.unindra.ac.id/pegawai/cari',
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final document = html_parser.parse(response.data);
+        final productItems = document.querySelectorAll('.product-item');
+        
+        final List<DosenSearchResult> results = [];
+        
+        for (var item in productItems) {
+          try {
+            final nama = item.querySelector('.text-header')?.text.trim() ?? '';
+            final nidnElement = item.querySelector('.category.secondary');
+            final nidn = nidnElement?.text.replaceAll('NIDN:', '').trim() ?? '';
+            
+            final prodiElement = item.querySelectorAll('.category.gray')[0];
+            final prodi = prodiElement.text.replaceAll('Prodi:', '').trim();
+            
+            final kepakaranElement = item.querySelectorAll('.category.gray')[1];
+            final kepakaran = kepakaranElement.text.replaceAll('Kepakaran:', '').trim();
+            
+            final onclickAttr = item.querySelector('a[onclick]')?.attributes['onclick'] ?? '';
+            final kodeMatch = RegExp(r"dosen_detail\('([^']+)'\)").firstMatch(onclickAttr);
+            final kode = kodeMatch?.group(1) ?? '';
+            
+            final photoUrl = item.querySelector('img')?.attributes['src'];
+            
+            if (nama.isNotEmpty && kode.isNotEmpty) {
+              results.add(DosenSearchResult(
+                nama: nama,
+                nidn: nidn,
+                prodi: prodi,
+                kepakaran: kepakaran,
+                kode: kode,
+                photoUrl: photoUrl,
+              ));
+            }
+          } catch (e) {
+            print('Error parsing dosen item: $e');
+            continue;
+          }
+        }
+        
+        return results;
+      } else {
+        throw Exception('Failed to search dosen: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching dosen: $e');
+      rethrow;
+    }
+  }
+
+  Future<DosenDetail> getDosenDetail(String kode, {String? nidn}) async {
+    try {
+      final dio = Dio();
+      
+      final formData = FormData.fromMap({'kode': kode});
+      final response = await dio.post(
+        'https://simpeg.unindra.ac.id/pegawai/detail/$kode',
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final document = html_parser.parse(response.data);
+        
+        final inputs = document.querySelectorAll('input[readonly]');
+        final nama = inputs.isNotEmpty ? inputs[0].attributes['value'] ?? '' : '';
+        final fakultas = inputs.length > 1 ? inputs[1].attributes['value'] ?? '' : '';
+        final prodi = inputs.length > 2 ? inputs[2].attributes['value'] ?? '' : '';
+        final jabatanFungsional = inputs.length > 3 ? inputs[3].attributes['value'] ?? '' : '';
+        final statusIkatanKerja = inputs.length > 4 ? inputs[4].attributes['value'] ?? '' : '';
+        final jenisKelamin = inputs.length > 5 ? inputs[5].attributes['value'] ?? '' : '';
+        final pendidikanTerakhir = inputs.length > 6 ? inputs[6].attributes['value'] ?? '' : '';
+        
+        final photoUrl = document.querySelector('img[alt="dosen-image"]')?.attributes['src'];
+        
+        String? ponsel;
+        String? statusWa;
+        
+        try {
+          final jsonResponse = await dio.get(
+            'https://raw.githubusercontent.com/dandiedutech/unindra/refs/heads/main/doesnt.json',
+          );
+          
+          if (jsonResponse.statusCode == 200) {
+            final Map<String, dynamic> data = jsonResponse.data is String 
+              ? json.decode(jsonResponse.data) 
+              : jsonResponse.data;
+            
+            for (var prodiData in data.values) {
+              if (prodiData is List) {
+                for (var dosen in prodiData) {
+                  if (nidn != null && nidn.isNotEmpty && dosen['nidn'] == nidn) {
+                    ponsel = dosen['ponsel'];
+                    statusWa = dosen['status_wa'];
+                    break;
+                  }
+                }
+                if (ponsel != null) break;
+              }
+            }
+          }
+        } catch (e) {
+          print('Error fetching phone number: $e');
+        }
+        
+        return DosenDetail(
+          nama: nama,
+          nidn: nidn ?? '',
+          fakultas: fakultas,
+          prodi: prodi,
+          jabatanFungsional: jabatanFungsional,
+          statusIkatanKerja: statusIkatanKerja,
+          jenisKelamin: jenisKelamin,
+          pendidikanTerakhir: pendidikanTerakhir,
+          photoUrl: photoUrl,
+          ponsel: ponsel,
+          statusWa: statusWa,
+        );
+      } else {
+        throw Exception('Failed to get dosen detail: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error getting dosen detail: $e');
       rethrow;
     }
   }
