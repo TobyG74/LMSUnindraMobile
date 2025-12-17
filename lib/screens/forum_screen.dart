@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:html/parser.dart' as html_parser;
+import 'package:flutter/gestures.dart';
 
 class ForumScreen extends StatefulWidget {
   final String encryptedUrl;
@@ -67,13 +69,15 @@ class _ForumScreenState extends State<ForumScreen> {
     setState(() => _isSending = true);
 
     try {
+      final formattedMessage = _convertWhatsAppFormatToHtml(_messageController.text.trim());
+      
       await _apiService.submitForumReply(
         parentId: _replyingTo!['parent_id'] ?? '0',
         kdJdwEnc: _replyingTo!['kd_jdw_enc'] ?? '',
         idAktifitas: _replyingTo!['id_aktifitas'] ?? '',
         replyId: _replyingTo!['reply_id'] ?? '',
         forumNama: _replyingTo!['forum_nama'] ?? '',
-        message: _messageController.text.trim(),
+        message: formattedMessage,
       );
 
       if (mounted) {
@@ -105,6 +109,83 @@ class _ForumScreenState extends State<ForumScreen> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  String _convertWhatsAppFormatToHtml(String text) {
+    // Bold: *text* to <strong>text</strong>
+    text = text.replaceAllMapped(
+      RegExp(r'\*([^\*]+)\*'),
+      (match) => '<strong>${match.group(1)}</strong>',
+    );
+    
+    // Italic: _text_ to <em>text</em>
+    text = text.replaceAllMapped(
+      RegExp(r'_([^_]+)_'),
+      (match) => '<em>${match.group(1)}</em>',
+    );
+    
+    // Strikethrough: ~text~ to <s>text</s>
+    text = text.replaceAllMapped(
+      RegExp(r'~([^~]+)~'),
+      (match) => '<s>${match.group(1)}</s>',
+    );
+    
+    return '<p>$text</p>';
+  }
+
+  Widget _buildFormattedText(String htmlText) {
+    try {
+      final document = html_parser.parse(htmlText);
+      final body = document.body;
+      
+      if (body == null) {
+        return Text(htmlText);
+      }
+      
+      return _buildTextSpanFromHtml(body);
+    } catch (e) {
+      return Text(htmlText);
+    }
+  }
+
+  Widget _buildTextSpanFromHtml(dynamic element) {
+    final spans = <InlineSpan>[];
+    
+    for (var node in element.nodes) {
+      if (node.nodeType == 3) { // Text node
+        spans.add(TextSpan(text: node.text));
+      } else if (node.nodeType == 1) { // Element node
+        final tag = (node as dynamic).localName;
+        final text = node.text;
+        
+        TextStyle style = const TextStyle(fontSize: 14, color: Colors.black87);
+        
+        switch (tag) {
+          case 'strong':
+          case 'b':
+            style = style.copyWith(fontWeight: FontWeight.bold);
+            break;
+          case 'em':
+          case 'i':
+            style = style.copyWith(fontStyle: FontStyle.italic);
+            break;
+          case 's':
+          case 'strike':
+          case 'del':
+            style = style.copyWith(decoration: TextDecoration.lineThrough);
+            break;
+        }
+        
+        spans.add(TextSpan(text: text, style: style));
+      }
+    }
+    
+    return RichText(
+      text: TextSpan(
+        children: spans,
+        style: const TextStyle(fontSize: 14, color: Colors.black87),
+      ),
     );
   }
 
@@ -228,10 +309,7 @@ class _ForumScreenState extends State<ForumScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    mainPost['content'] ?? '',
-                    style: const TextStyle(fontSize: 15),
-                  ),
+                  _buildFormattedText(mainPost['content'] ?? ''),
                 ],
               ),
             ),
@@ -322,10 +400,7 @@ class _ForumScreenState extends State<ForumScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    replyMap['message'] ?? '',
-                    style: const TextStyle(fontSize: 14),
-                  ),
+                  _buildFormattedText(replyMap['message'] ?? ''),
                   const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
@@ -367,7 +442,12 @@ class _ForumScreenState extends State<ForumScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -430,20 +510,26 @@ class _ForumScreenState extends State<ForumScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _messageController,
-                  decoration: InputDecoration(
-                    hintText: 'Tulis pesan...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Tulis pesan...',
+                        helperStyle: const TextStyle(fontSize: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      maxLines: null,
+                      enabled: !_isSending,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  maxLines: null,
-                  enabled: !_isSending,
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
