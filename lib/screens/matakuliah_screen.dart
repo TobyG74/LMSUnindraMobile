@@ -70,6 +70,99 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
     'Multimedia': Icons.perm_media,
     'Pengolahan Citra': Icons.image,
     'Teknik Simulasi': Icons.analytics,
+    'Manajemen Bisnis': Icons.business,
+    'Matematika Ekonomi': Icons.trending_up,
+    'Pengantar Pendidikan': Icons.school,
+    'Bahasa Inggris Bisnis': Icons.language,
+    'Manajemen Umum': Icons.admin_panel_settings,
+    'Perkembangan Peserta Didik': Icons.child_care,
+    'Prinsip-prinsip Dasar Akuntansi': Icons.account_balance_wallet,
+    'Akuntansi Lanjutan': Icons.receipt_long,
+    'Kurikulum Pendidikan': Icons.menu_book,
+    'Manajemen Sumber Daya Manusia': Icons.group,
+    'Pengantar Manajemen Keuangan': Icons.monetization_on,
+    'Pengantar Manajemen Pemasaran': Icons.campaign,
+    'Sejarah Pemikiran Ekonomi': Icons.history_edu,
+    'Teori Ekonomi Mikro': Icons.price_check,
+    'Akuntansi Biaya': Icons.calculate,
+    'Manajemen Keuangan & Investasi': Icons.show_chart,
+    'Manajemen Pemasaran': Icons.storefront,
+    'Sejarah Pendidikan & PGRI': Icons.history,
+    'Statistik Deskriptif': Icons.bar_chart,
+    'Strategi Belajar Pembelajaran': Icons.lightbulb,
+    'Teori Ekonomi Makro': Icons.account_balance,
+    'Bank Dan Lembaga Keuangan Lainnya': Icons.account_balance,
+    'Manajemen Produksi': Icons.precision_manufacturing,
+    'Perencanaan Pembelajaran': Icons.calendar_month,
+    'Perpajakan': Icons.receipt,
+    'Profesi Kependidikan': Icons.badge,
+    'Statistik Inferensial': Icons.insights,
+    'Ekonomi Pembangunan': Icons.construction,
+    'Perdagangan Luar Negeri': Icons.public,
+    'Ekonomi Syariah': Icons.mosque,
+    'Pasar Uang Pasar Modal': Icons.currency_exchange,
+    'Dasar-Dasar Ilmu Pendidikan': Icons.school,
+    'Dasar-Dasar Pelayanan BK': Icons.support_agent,
+    'Belajar dan Pembelajaran': Icons.auto_stories,
+    'Manajemen BK': Icons.settings,
+    'Pengembangan Profesi Konseling': Icons.psychology,
+    'Psikologi Pendidikan': Icons.psychology,
+    'Psikologi Perkembangan Anak & Remaja': Icons.child_care,
+    'Psikologi Sosial': Icons.groups,
+    'Instrumentasi Nontes': Icons.quiz,
+    'Keterampilan Dasar Konseling': Icons.chat,
+    'Metodologi Pembelajaran': Icons.menu_book,
+    'Psikologi Kepribadian': Icons.person,
+    'Aplikasi Statistika dalam BK': Icons.analytics,
+    'Instrumentasi Tes': Icons.assignment,
+    'Kesehatan Mental': Icons.health_and_safety,
+    'Konseling Format Khusus': Icons.video_call,
+    'Konseling Format Klasikal': Icons.meeting_room,
+    'Layanan BK Kelompok': Icons.group_work,
+    'Model-Model Konseling': Icons.psychology,
+    'Kegiatan Pendukung BK': Icons.support,
+    'Konseling Pernikahan dan Keluarga': Icons.family_restroom,
+    'Konstruksi dan Pengukuran BK': Icons.construction,
+    'Metode Penelitian Kualitatif': Icons.science,
+    'Praktik Laboratorium BK Kelompok': Icons.biotech,
+    'Teknologi Informasi dalam BK': Icons.computer,
+    'Evaluasi Pembelajaran': Icons.assessment,
+    'Konseling Kesehatan': Icons.medical_services,
+    'Konseling Lintas Budaya': Icons.public,
+    'Layanan BK di Pendidikan Dasar': Icons.school,
+    'Diagnostik Kesulitan Belajar & Remedial': Icons.healing,
+    'Metode Penelitian Kuantitatif': Icons.data_exploration,
+    'Praktik Laboratorium Konseling Perorangan': Icons.person_search,
+    'Studi Kasus dalam BK': Icons.cases,
+    'English for Guidance': Icons.translate,
+    'Layanan BK di Pendidikan Menengah dan Tinggi': Icons.account_balance,
+    'Desain Elementer Dwimatra': Icons.grid_4x4,
+    'Pengantar Ilmu Komunikasi': Icons.campaign,
+    'Bahasa Inggris Desain': Icons.language,
+    'Pengantar Budaya Nusantara': Icons.temple_buddhist,
+    'Teknik Presentasi': Icons.present_to_all,
+    'Filsafat Seni': Icons.palette,
+    'Fotografi Dasar': Icons.photo_camera,
+    'Perkembangan Media': Icons.trending_up,
+    'Ragam Hias Nusantara': Icons.texture,
+    'Wawasan Budaya Nusantara': Icons.public,
+    'Desain dan Kebudayaan': Icons.palette_outlined,
+    'Desain Komunikasi Visual': Icons.design_services,
+    'Fotografi Terapan': Icons.photo_camera_front,
+    'Gambar Eunik': Icons.draw,
+    'Kajian Seni Rupa dan Desain': Icons.art_track,
+    'Ruang Visual Nusantara': Icons.view_in_ar,
+    'Tipografi Terapan': Icons.text_fields,
+    'Filsafat Nusantara': Icons.auto_stories,
+    'Komunikasi Bisnis': Icons.business_center,
+    'Logika Berpikir Desain': Icons.psychology_alt,
+    'Manajemen Proyek': Icons.manage_accounts,
+    'Metode Grafika': Icons.graphic_eq,
+    'Sosiologi Desain': Icons.groups_2,
+    'Kekayaan Intelektual': Icons.copyright,
+    'Infografik': Icons.insert_chart,
+    'Manajemen Publikasi': Icons.publish,
+    'Pengantar Sinematografi': Icons.movie,
   };
 
   final Map<String, Color> _colorMap = {
@@ -124,12 +217,136 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
     'Multimedia': Colors.pink,
     'Pengolahan Citra': Colors.cyan,
     'Teknik Simulasi': Colors.green,
+    'Manajemen Bisnis': Colors.teal,
+    'Matematika Ekonomi': Colors.orange,
+    'Pengantar Pendidikan': Colors.blue,
+    'Bahasa Inggris Bisnis': Colors.lightBlue,
+    'Manajemen Umum': Colors.deepPurple,
+    'Perkembangan Peserta Didik': Colors.pink,
+    'Prinsip-prinsip Dasar Akuntansi': Colors.green,
+    'Akuntansi Lanjutan': Colors.teal,
+    'Kurikulum Pendidikan': Colors.indigo,
+    'Manajemen Sumber Daya Manusia': Colors.purple,
+    'Pengantar Manajemen Keuangan': Colors.amber,
+    'Pengantar Manajemen Pemasaran': Colors.red,
+    'Sejarah Pemikiran Ekonomi': Colors.brown,
+    'Teori Ekonomi Mikro': Colors.cyan,
+    'Akuntansi Biaya': Colors.deepOrange,
+    'Manajemen Keuangan & Investasi': Colors.blue,
+    'Manajemen Pemasaran': Colors.pink,
+    'Sejarah Pendidikan & PGRI': Colors.brown,
+    'Statistik Deskriptif': Colors.green,
+    'Strategi Belajar Pembelajaran': Colors.orange,
+    'Teori Ekonomi Makro': Colors.indigo,
+    'Bank Dan Lembaga Keuangan Lainnya': Colors.blueGrey,
+    'Manajemen Produksi': Colors.purple,
+    'Perencanaan Pembelajaran': Colors.teal,
+    'Perpajakan': Colors.amber,
+    'Profesi Kependidikan': Colors.blue,
+    'Statistik Inferensial': Colors.deepPurple,
+    'Ekonomi Pembangunan': Colors.green,
+    'Perdagangan Luar Negeri': Colors.lightBlue,
+    'Ekonomi Syariah': Colors.teal,
+    'Pasar Uang Pasar Modal': Colors.cyan,
+    'Dasar-Dasar Ilmu Pendidikan': Colors.blue,
+    'Dasar-Dasar Pelayanan BK': Colors.purple,
+    'Belajar dan Pembelajaran': Colors.orange,
+    'Manajemen BK': Colors.indigo,
+    'Pengembangan Profesi Konseling': Colors.deepPurple,
+    'Psikologi Pendidikan': Colors.teal,
+    'Psikologi Perkembangan Anak & Remaja': Colors.pink,
+    'Psikologi Sosial': Colors.lightBlue,
+    'Instrumentasi Nontes': Colors.amber,
+    'Keterampilan Dasar Konseling': Colors.green,
+    'Metodologi Pembelajaran': Colors.brown,
+    'Psikologi Kepribadian': Colors.deepOrange,
+    'Aplikasi Statistika dalam BK': Colors.cyan,
+    'Instrumentasi Tes': Colors.purple,
+    'Kesehatan Mental': Colors.green,
+    'Konseling Format Khusus': Colors.indigo,
+    'Konseling Format Klasikal': Colors.blue,
+    'Layanan BK Kelompok': Colors.orange,
+    'Model-Model Konseling': Colors.deepPurple,
+    'Kegiatan Pendukung BK': Colors.teal,
+    'Konseling Pernikahan dan Keluarga': Colors.pink,
+    'Konstruksi dan Pengukuran BK': Colors.amber,
+    'Metode Penelitian Kualitatif': Colors.blueGrey,
+    'Praktik Laboratorium BK Kelompok': Colors.lightBlue,
+    'Teknologi Informasi dalam BK': Colors.indigo,
+    'Evaluasi Pembelajaran': Colors.purple,
+    'Konseling Kesehatan': Colors.red,
+    'Konseling Lintas Budaya': Colors.brown,
+    'Layanan BK di Pendidikan Dasar': Colors.blue,
+    'Diagnostik Kesulitan Belajar & Remedial': Colors.orange,
+    'Metode Penelitian Kuantitatif': Colors.teal,
+    'Praktik Laboratorium Konseling Perorangan': Colors.deepPurple,
+    'Studi Kasus dalam BK': Colors.cyan,
+    'English for Guidance': Colors.lightBlue,
+    'Layanan BK di Pendidikan Menengah dan Tinggi': Colors.indigo,    'Desain Elementer Dwimatra': Colors.purple,
+    'Pengantar Ilmu Komunikasi': Colors.orange,
+    'Bahasa Inggris Desain': Colors.lightBlue,
+    'Pengantar Budaya Nusantara': Colors.brown,
+    'Teknik Presentasi': Colors.teal,
+    'Filsafat Seni': Colors.deepPurple,
+    'Fotografi Dasar': Colors.pink,
+    'Perkembangan Media': Colors.cyan,
+    'Ragam Hias Nusantara': Colors.amber,
+    'Wawasan Budaya Nusantara': Colors.green,
+    'Desain dan Kebudayaan': Colors.teal,
+    'Desain Komunikasi Visual': Colors.purple,
+    'Fotografi Terapan': Colors.pink,
+    'Gambar Eunik': Colors.orange,
+    'Kajian Seni Rupa dan Desain': Colors.deepPurple,
+    'Ruang Visual Nusantara': Colors.indigo,
+    'Tipografi Terapan': Colors.blueGrey,
+    'Filsafat Nusantara': Colors.brown,
+    'Komunikasi Bisnis': Colors.blue,
+    'Logika Berpikir Desain': Colors.cyan,
+    'Manajemen Proyek': Colors.green,
+    'Metode Grafika': Colors.deepOrange,
+    'Sosiologi Desain': Colors.lightBlue,
+    'Kekayaan Intelektual': Colors.amber,
+    'Infografik': Colors.purple,
+    'Manajemen Publikasi': Colors.teal,
+    'Pengantar Sinematografi': Colors.red,
   };
 
   @override
   void initState() {
     super.initState();
     _loadMataKuliah();
+  }
+
+  IconData _getIconForMataKuliah(String nama) {
+    if (_iconMap.containsKey(nama)) {
+      return _iconMap[nama]!;
+    }
+    
+    final namaLower = nama.toLowerCase();
+    for (var entry in _iconMap.entries) {
+      if (entry.key.toLowerCase().contains(namaLower) ||
+          namaLower.contains(entry.key.toLowerCase())) {
+        return entry.value;
+      }
+    }
+    
+    return Icons.book;
+  }
+
+  Color _getColorForMataKuliah(String nama) {
+    if (_colorMap.containsKey(nama)) {
+      return _colorMap[nama]!;
+    }
+    
+    final namaLower = nama.toLowerCase();
+    for (var entry in _colorMap.entries) {
+      if (entry.key.toLowerCase().contains(namaLower) ||
+          namaLower.contains(entry.key.toLowerCase())) {
+        return entry.value;
+      }
+    }
+    
+    return Colors.blue;
   }
 
   Future<void> _loadMataKuliah() async {
@@ -183,7 +400,10 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
           final parts = headerText.split(' -');
           kode = parts[0].trim();
           
-          nama = parts[1].replaceAll(RegExp(r'\s*[\*\#\)]+\s*$'), '').trim();
+          nama = parts[1]
+              .replaceAll(RegExp(r'^[\*\+\#\s]+'), '') 
+              .replaceAll(RegExp(r'\s*[\*\#\)]+\s*$'), '')
+              .trim();
         }
 
         String dosen = '';
@@ -250,8 +470,8 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
         String sks = '3'; 
 
         if (nama.isNotEmpty && kode.isNotEmpty) {
-          final icon = _iconMap[nama] ?? Icons.book;
-          final color = _colorMap[nama] ?? Colors.blue;
+          final icon = _getIconForMataKuliah(nama);
+          final color = _getColorForMataKuliah(nama);
 
           items.add(MataKuliahItem(
             nama: nama,
@@ -280,100 +500,172 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mata Kuliah'),
-        backgroundColor: const Color(0xFF073163),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _loadMataKuliah,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Gagal memuat mata kuliah',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _loadMataKuliah,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Coba Lagi'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF073163),
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
+      backgroundColor: Colors.grey[100],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 40,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF073163),
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 0, bottom: 15),
+              title: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.book_rounded, size: 18, color: Colors.white),
+                  SizedBox(width: 6),
+                  Text(
+                    'Mata Kuliah',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
                   ),
+                ],
+              ),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF073163), Color(0xFF1756a5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: -30,
+                      bottom: -30,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: _isLoading ? null : _loadMataKuliah,
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+          _isLoading
+              ? const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
                 )
-              : _mataKuliahList.isEmpty
-                  ? const Center(child: Text('Tidak ada mata kuliah'))
-                  : Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF073163),
-                                const Color(0xFF073163).withOpacity(0.8),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+              : _errorMessage != null
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.error_outline_rounded,
+                                color: Colors.red,
+                                size: 64,
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${_mataKuliahList.length} Mata Kuliah',
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Gagal memuat mata kuliah',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Text(
+                                _errorMessage!,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.grey[600],
                                   fontSize: 14,
                                 ),
                               ),
-                            ],
+                            ),
+                            const SizedBox(height: 32),
+                            ElevatedButton.icon(
+                              onPressed: _loadMataKuliah,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Coba Lagi'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF073163),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _mataKuliahList.isEmpty
+                      ? const SliverFillRemaining(
+                          child: Center(
+                            child: Text(
+                              'Tidak ada mata kuliah',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        )
+                      : SliverPadding(
+                          padding: const EdgeInsets.all(16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final mataKuliah = _mataKuliahList[index];
+                                return _buildMataKuliahCard(mataKuliah);
+                              },
+                              childCount: _mataKuliahList.length,
+                            ),
                           ),
                         ),
-                        
-                        Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _mataKuliahList.length,
-                            itemBuilder: (context, index) {
-                              final mk = _mataKuliahList[index];
-                              return _buildMataKuliahCard(mk);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMataKuliahCard(MataKuliahItem mk) {
+  Widget _buildMataKuliahCard(MataKuliahItem mataKuliah) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -386,16 +678,16 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => MataKuliahDetailScreen(
-                namaMataKuliah: mk.nama,
-                kodeMataKuliah: mk.kode,
-                kelas: mk.kelas,
-                semester: mk.semester,
-                sks: mk.sks,
-                dosenPengampu: mk.dosen,
-                nomorHpDosen: mk.nomorHp,
-                fotoDosen: mk.fotoDosen,
-                ruang: mk.ruang,
-                waktu: mk.waktu,
+                namaMataKuliah: mataKuliah.nama,
+                kodeMataKuliah: mataKuliah.kode,
+                kelas: mataKuliah.kelas,
+                semester: mataKuliah.semester,
+                sks: mataKuliah.sks,
+                dosenPengampu: mataKuliah.dosen,
+                nomorHpDosen: mataKuliah.nomorHp,
+                fotoDosen: mataKuliah.fotoDosen,
+                ruang: mataKuliah.ruang,
+                waktu: mataKuliah.waktu,
               ),
             ),
           );
@@ -408,12 +700,12 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: mk.color.withOpacity(0.1),
+                  color: mataKuliah.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  mk.icon,
-                  color: mk.color,
+                  mataKuliah.icon,
+                  color: mataKuliah.color,
                   size: 28,
                 ),
               ),
@@ -425,7 +717,7 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      mk.nama,
+                      mataKuliah.nama,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -433,7 +725,7 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      mk.kode,
+                      mataKuliah.kode,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -444,15 +736,15 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                       children: [
                         _buildChip(
                           Icons.class_,
-                          'Kelas ${mk.kelas}',
+                          'Kelas ${mataKuliah.kelas}',
                           Colors.green,
                         ),
-                        if (mk.waktu != null && mk.waktu!.isNotEmpty) ...[
+                        if (mataKuliah.waktu != null && mataKuliah.waktu!.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Flexible(
                             child: _buildChip(
                               Icons.schedule,
-                              mk.waktu!,
+                              mataKuliah.waktu!,
                               Colors.orange,
                             ),
                           ),

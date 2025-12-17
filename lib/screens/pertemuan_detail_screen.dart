@@ -49,7 +49,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Pake encryptedKelasId dulu, kalo ga ada baru pake encryptedUrl
       final urlToFetch = widget.encryptedKelasId ?? widget.encryptedUrl;
       
       if (urlToFetch != null) {
@@ -70,7 +69,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     final document = html_parser.parse(html);
     final List<MateriItem> items = [];
 
-    // Cari box-body dulu
     final boxBody = document.querySelector('div.box-body');
     if (boxBody != null) {
       final tableInBox = boxBody.querySelector('table');
@@ -82,7 +80,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       }
     }
     
-    // Kalo masih kosong, coba cara lain
     if (items.isEmpty) {
       var rows = document.querySelectorAll('table tbody tr');
       if (rows.isNotEmpty) {
@@ -278,7 +275,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
             for (var link in allLinks) {
               final linkText = link.text.trim();
               if (linkText.isNotEmpty) {
-                // Ambil kode tugas aja, buang prefixnya
                 if (linkText.contains(':')) {
                   final parts = linkText.split(':');
                   if (parts.length > 1) {
@@ -306,7 +302,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
             for (var link in allLinks) {
               final linkText = link.text.trim();
               if (linkText.isNotEmpty) {
-                // Buang prefix "URL Eksternal:"
                 if (linkText.contains(':')) {
                   final parts = linkText.split(':');
                   if (parts.length > 1) {
@@ -337,7 +332,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
               final href = link.attributes['href'] ?? '';
               
               if (linkText.isNotEmpty) {
-                // Buang prefix "Forum:"
                 if (linkText.contains(':')) {
                   final parts = linkText.split(':');
                   if (parts.length > 1) {
@@ -365,7 +359,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
               final linkText = link.text.trim();
               
               if (linkText.isNotEmpty) {
-                // Cek link Google Meet
                 if (linkText.toLowerCase().contains('google meet')) {
                   if (linkText.contains(':')) {
                     final parts = linkText.split(':');
@@ -481,11 +474,6 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       return;
     }
 
-    final fileExt = _getFileExtension(item);
-      final fileTypeName = _getFileTypeName(item.type);
-    
-    _showSnackBar('Mengunduh file $fileTypeName...');
-
     try {
       Directory? baseDir;
       if (Platform.isAndroid) {
@@ -508,6 +496,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       if (!await mkDir.exists()) await mkDir.create(recursive: true);
       if (!await pertemuanDir.exists()) await pertemuanDir.create(recursive: true);
       
+      final fileExt = _getFileExtension(item);
       String cleanFileName = item.description.isNotEmpty ? item.description : item.title;
       if (cleanFileName.isEmpty) {
         cleanFileName = 'materi_${DateTime.now().millisecondsSinceEpoch}';
@@ -519,13 +508,99 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       
       final fileName = '$cleanFileName.$fileExt';
       final savePath = '${pertemuanDir.path}/$fileName';
+      final file = File(savePath);
+      
+      if (await file.exists()) {
+        if (download) {
+          _showSnackBar('File sudah tersimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
+          return;
+        } else {
+          final openResult = await OpenFilex.open(savePath);
+          if (openResult.type != ResultType.done) {
+            _showSnackBar('File ada tetapi tidak dapat dibuka. Silakan buka manual.');
+          }
+          return;
+        }
+      }
 
-      final result = await _apiService.downloadFile(item.downloadUrl!, savePath);
+      final fileTypeName = _getFileTypeName(item.type);
+      
+      final progressNotifier = ValueNotifier<double>(0.0);
+      final receivedNotifier = ValueNotifier<int>(0);
+      final totalNotifier = ValueNotifier<int>(0);
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => ValueListenableBuilder<double>(
+            valueListenable: progressNotifier,
+            builder: (context, progress, _) {
+              return ValueListenableBuilder<int>(
+                valueListenable: receivedNotifier,
+                builder: (context, received, _) {
+                  return ValueListenableBuilder<int>(
+                    valueListenable: totalNotifier,
+                    builder: (context, total, _) {
+                      return AlertDialog(
+                        title: Text('Mengunduh $fileTypeName'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            LinearProgressIndicator(value: progress),
+                            const SizedBox(height: 16),
+                            Text(
+                              '${(progress * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (total > 0) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '${(received / 1024 / 1024).toStringAsFixed(2)} MB / ${(total / 1024 / 1024).toStringAsFixed(2)} MB',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        );
+      }
+      
+      final result = await _apiService.downloadFile(
+        item.downloadUrl!, 
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            progressNotifier.value = received / total;
+            receivedNotifier.value = received;
+            totalNotifier.value = total;
+          }
+        },
+      );
+
+      // Cleanup ValueNotifiers
+      progressNotifier.dispose();
+      receivedNotifier.dispose();
+      totalNotifier.dispose();
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
       if (result != null) {
         if (download) {
-          final mataKuliahFolder = widget.mataKuliah ?? 'Materi';
-          final pertemuanFolder = widget.pertemuanKe != null ? 'Pertemuan ${widget.pertemuanKe}' : 'Pertemuan';
           _showSnackBar('File disimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
         } else {
           final openResult = await OpenFilex.open(savePath);
@@ -537,10 +612,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         _showSnackBar('Gagal mengunduh file');
       }
     } catch (e) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
       _showSnackBar('Error: $e');
     }
   }
-  
+
   String _getFileTypeName(String type) {
     switch (type) {
       case 'pdf':
@@ -884,25 +962,94 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                         'Pertemuan';
     
     return Scaffold(
-      appBar: AppBar(
-        title: Text(displayTitle),
-        backgroundColor: const Color(0xFF073163),
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _materiList.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Tidak ada materi',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 40,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF073163),
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 0, bottom: 15),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.book_rounded, size: 18, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      displayTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                ],
+              ),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF073163), Color(0xFF1756a5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: -30,
+                      bottom: -30,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          _isLoading
+              ? const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _materiList.length,
-                  itemBuilder: (context, index) {
-                    final item = _materiList[index];
+              : _materiList.isEmpty
+                  ? const SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          'Tidak ada materi',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  : SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final item = _materiList[index];
                     return Card(
                       elevation: 2,
                       margin: const EdgeInsets.only(bottom: 12),
@@ -1022,7 +1169,12 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                       ),
                     );
                   },
+                  childCount: _materiList.length,
                 ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
