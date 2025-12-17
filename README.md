@@ -17,10 +17,18 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
 </p>
 
 
-### Jadwal Kuliah
+### Jadwal Kuliah & Pertemuan
 <p align="center">
   <img src="assets/jadwalkuliah.png" alt="Jadwal Kuliah" width="200"/>
-  <img src="assets/jadwalkuliah_detail.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/pertemuan.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/pertemuan_detail.png" alt="Detail Jadwal" width="200"/>
+</p>
+
+### Pertemuan: Tugas, External URL, Forum Diskusi
+<p align="center">
+  <img src="assets/pertemuan_tugas.png" alt="Tugas" width="200"/>
+  <img src="assets/pertemuan_external.png" alt="External URL" width="200"/>
+  <img src="assets/pertemuan_forum.png" alt="Forum Diskusi" width="200"/>
 </p>
 
 ### Mata Kuliah
@@ -29,10 +37,17 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
   <img src="assets/matakuliah_detail.png" alt="Detail Mata Kuliah" width="200"/>
 </p>
 
-### Pertemuan & Materi
+### Presensi & Materi
 <p align="center">
   <img src="assets/presensi.png" alt="Presensi" width="200"/>
   <img src="assets/profile.png" alt="Profile" width="200"/>
+</p>
+
+### Cari Mahasiswa & Cari Dosen
+<p align="center">
+  <img src="assets/cari_mahasiswa.png" alt="Cari Mahasiswa" width="200"/>
+  <img src="assets/cari_dosen.png" alt="Cari Dosen" width="200"/>
+  <img src="assets/cari_dosen_detail.png" alt="Cari Dosen" width="200"/>
 </p>
 
 ## Tabel Konten
