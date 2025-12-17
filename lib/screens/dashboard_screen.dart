@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
@@ -126,18 +127,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 16),
-              _buildLinkButton(
-                context,
-                icon: Icons.code,
-                label: 'GitHub',
-                url: 'https://github.com/TobyG74',
-              ),
-              const SizedBox(height: 8),
-              _buildLinkButton(
-                context,
-                icon: Icons.camera_alt,
-                label: 'Instagram',
-                url: 'https://instagram.com/ini.tobz',
+              Row(
+                children: [
+                  _buildLinkButton(
+                    context,
+                    icon: FontAwesomeIcons.github,
+                    label: 'GitHub',
+                    url: 'https://github.com/TobyG74',
+                  ),
+                  const SizedBox(width: 8),
+                  _buildLinkButton(
+                    context,
+                    icon: FontAwesomeIcons.instagram,
+                    label: 'Instagram',
+                    url: 'https://instagram.com/ini.tobz',
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               const Divider(),
@@ -178,7 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 4),
                     _buildLinkButton(
                       context,
-                      icon: Icons.camera_alt,
+                      icon: FontAwesomeIcons.instagram,
                       label: 'Instagram',
                       url: 'https://instagram.com/siorxplane',
                       compact: true,
@@ -223,12 +228,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    _buildLinkButton(
-                      context,
-                      icon: Icons.code,
-                      label: 'GitHub',
-                      url: 'https://github.com/dandiedutech',
-                      compact: true,
+                    Row(
+                      children: [
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.github,
+                          label: 'GitHub',
+                          url: 'https://github.com/dandiedutech',
+                          compact: true,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.instagram,
+                          label: 'Instagram',
+                          url: 'https://instagram.com/dandisubhani_',
+                          compact: true,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -274,29 +291,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: compact ? const EdgeInsets.all(8) : const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.blue.shade200),
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.blue.shade700, size: compact ? 16 : 20),
-            SizedBox(width: compact ? 8 : 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: Colors.blue.shade700,
-                  fontWeight: FontWeight.w500,
-                  fontSize: compact ? 13 : 14,
-                ),
-              ),
-            ),
-            Icon(Icons.open_in_new, color: Colors.blue.shade700, size: compact ? 14 : 18),
-          ],
-        ),
+        child: Icon(icon, color: Colors.blue.shade700, size: compact ? 20 : 24),
       ),
     );
   }
@@ -551,7 +552,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildModernMenuCard(
                         context,
                         icon: Icons.search_rounded,
-                        title: 'Cari Mahasiswa',
+                        title: 'Cari Mhs',
                         subtitle: 'Database PDDIKTI',
                         gradient: const LinearGradient(
                           colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
