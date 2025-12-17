@@ -243,12 +243,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
               _buildLinkButton(
+                context,
                 icon: Icons.code,
                 label: 'GitHub',
                 url: 'https://github.com/TobyG74',
               ),
               const SizedBox(height: 8),
               _buildLinkButton(
+                context,
                 icon: Icons.camera_alt,
                 label: 'Instagram',
                 url: 'https://instagram.com/ini.tobz',
@@ -291,21 +293,57 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     _buildLinkButton(
+                      context,
                       icon: Icons.camera_alt,
-                      label: '@siorxplane',
+                      label: 'Instagram',
                       url: 'https://instagram.com/siorxplane',
                       compact: true,
                     ),
-                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.code, size: 16, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Kontributor Fitur',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
                       '• Ahmad Dandi Subhani',
                       style: TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
+                    Text(
+                      'Fitur Cari Dosen (Data & API)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     _buildLinkButton(
-                      icon: Icons.camera_alt,
-                      label: '@dandisubhani_',
-                      url: 'https://instagram.com/dandisubhani_',
+                      context,
+                      icon: Icons.code,
+                      label: 'GitHub',
+                      url: 'https://github.com/dandiedutech',
                       compact: true,
                     ),
                   ],
@@ -324,7 +362,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLinkButton({
+  Widget _buildLinkButton(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String url,
@@ -387,6 +426,11 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh, color: Color(0xFF073163)),
+            onPressed: _isLoading ? null : _loadLoginData,
+            tooltip: 'Refresh',
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline, color: Color(0xFF073163)),
             onPressed: _showAboutDialog,
             tooltip: 'Tentang Aplikasi',
@@ -395,13 +439,77 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: SafeArea(
         child: _isLoading && _loginFormData == null
-            ? const Center(
-                child: SpinKitFadingCircle(
-                  color: Color(0xFF073163),
-                  size: 50.0,
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SpinKitFadingCircle(
+                      color: Color(0xFF073163),
+                      size: 50.0,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Memuat halaman login...',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               )
-            : SingleChildScrollView(
+            : _errorMessage != null && _loginFormData == null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Gagal Memuat',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _loadLoginData,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Coba Lagi'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF073163),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
                   key: _formKey,
