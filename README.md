@@ -4,7 +4,8 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
 
 ## Releases
 
-- [v1.0.1 - Latest Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.1)
+- [v1.0.2 - Latest Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.2)
+- [v1.0.1](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.1)
 - [v1.0.0 - Initial Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.0)
 
 ## Screenshots
