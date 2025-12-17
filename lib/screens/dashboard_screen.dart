@@ -9,6 +9,8 @@ import 'jadwal_screen.dart';
 import 'presensi_screen.dart';
 import 'profile_screen.dart';
 import 'matakuliah_screen.dart';
+import 'mahasiswa_search_screen.dart';
+import 'dosen_search_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -181,17 +183,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       url: 'https://instagram.com/siorxplane',
                       compact: true,
                     ),
-                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.code, size: 16, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Kontributor Fitur',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
                       '• Ahmad Dandi Subhani',
                       style: TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
+                    Text(
+                      'Fitur Cari Dosen (Data & API)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     _buildLinkButton(
                       context,
-                      icon: Icons.camera_alt,
-                      label: 'Instagram',
-                      url: 'https://instagram.com/dandisubhani_',
+                      icon: Icons.code,
+                      label: 'GitHub',
+                      url: 'https://github.com/dandiedutech',
                       compact: true,
                     ),
                   ],
@@ -268,254 +304,364 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard LMS'),
-        backgroundColor: const Color(0xFF073163),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showAboutDialog(context),
-            tooltip: 'Tentang Aplikasi',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authService = Provider.of<AuthService>(context, listen: false);
-              await authService.logout();
-              
-              if (context.mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const LoginScreen(),
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 160,
+            floating: false,
+            pinned: true,
+            backgroundColor: const Color(0xFF073163),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
                     colors: [Color(0xFF073163), Color(0xFF1756a5)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: _isLoadingUserData
                     ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : SafeArea(
                         child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
+                          padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                          child: Row(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: _userPhotoUrl != null
+                                    ? CircleAvatar(
+                                        radius: 40,
+                                        backgroundColor: Colors.white,
+                                        child: ClipOval(
+                                          child: Image.network(
+                                            _userPhotoUrl!,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.person,
+                                                size: 45,
+                                                color: Color(0xFF073163),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      )
+                                    : const CircleAvatar(
+                                        radius: 40,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(
+                                          Icons.person,
+                                          size: 45,
+                                          color: Color(0xFF073163),
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Halo! 👋',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (_userName != null)
+                                      Text(
+                                        _userName!,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    else
+                                      const Text(
+                                        'Mahasiswa',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      )
-                    : Row(
-                        children: [
-                          _userPhotoUrl != null
-                              ? CircleAvatar(
-                                  radius: 35,
-                                  backgroundColor: Colors.white,
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      _userPhotoUrl!,
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.person,
-                                          size: 40,
-                                          color: Color(0xFF073163),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                              : const CircleAvatar(
-                                  radius: 35,
-                                  backgroundColor: Colors.white,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 40,
-                                    color: Color(0xFF073163),
-                                  ),
-                                ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Selamat Datang!',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                if (_userName != null)
-                                  Text(
-                                    _userName!,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    'Login berhasil ke LMS UNINDRA',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.9),
-                                    ),
-                                  ),
-                              ],
+                      ),
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.info_outline, color: Colors.white),
+                onPressed: () => _showAboutDialog(context),
+                tooltip: 'Tentang',
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: () async {
+                  final authService = Provider.of<AuthService>(context, listen: false);
+                  await authService.logout();
+                  
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  }
+                },
+                tooltip: 'Keluar',
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF073163),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Menu Utama',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF073163),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.1,
+                    children: [
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.book_rounded,
+                        title: 'Mata Kuliah',
+                        subtitle: 'Lihat semua',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const MataKuliahScreen(),
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.calendar_month_rounded,
+                        title: 'Jadwal',
+                        subtitle: 'Jadwal kuliah',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF009688), Color(0xFF00796B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const JadwalScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.how_to_reg_rounded,
+                        title: 'Presensi',
+                        subtitle: 'Riwayat hadir',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFA726), Color(0xFFF57C00)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const PresensiScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.person_rounded,
+                        title: 'Profil',
+                        subtitle: 'Data diri',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF5E35B1), Color(0xFF4527A0)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.search_rounded,
+                        title: 'Cari Mahasiswa',
+                        subtitle: 'Database PDDIKTI',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const MahasiswaSearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildModernMenuCard(
+                        context,
+                        icon: Icons.person_search_rounded,
+                        title: 'Cari Dosen',
+                        subtitle: 'SIMPEG UNINDRA',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const DosenSearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            
-            const SizedBox(height: 24),
-            
-            const Text(
-              'Menu Utama',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              children: [
-                _buildMenuCard(
-                  context,
-                  icon: Icons.book,
-                  title: 'Mata Kuliah',
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const MataKuliahScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  context,
-                  icon: Icons.schedule,
-                  title: 'Jadwal',
-                  color: Colors.teal,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const JadwalScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  context,
-                  icon: Icons.check_circle,
-                  title: 'Presensi',
-                  color: Colors.amber,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const PresensiScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  context,
-                  icon: Icons.person,
-                  title: 'Profil',
-                  color: Colors.indigo,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuCard(
+  Widget _buildModernMenuCard(
     BuildContext context, {
     required IconData icon,
     required String title,
-    required Color color,
+    required String subtitle,
+    required Gradient gradient,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.colors.first.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
