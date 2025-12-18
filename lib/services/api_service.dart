@@ -1392,6 +1392,7 @@ class ApiService {
         String? ponsel;
         String? statusWa;
         
+        // Matching nama dosen di simpeg dengan nama dosen di doesnt.json
         try {
           final jsonResponse = await dio.get(
             'https://raw.githubusercontent.com/dandiedutech/unindra/refs/heads/main/doesnt.json',
@@ -1402,17 +1403,68 @@ class ApiService {
               ? json.decode(jsonResponse.data) 
               : jsonResponse.data;
             
+            String normalizedNama = nama
+                .toLowerCase()
+                .replaceAll(RegExp(r'[.,\s]+'), ' ')  
+                .replaceAll(RegExp(r'\s+'), ' ')    
+                .trim();
+            
             for (var prodiData in data.values) {
               if (prodiData is List) {
-                for (var dosen in prodiData) {
-                  if (nidn != null && nidn.isNotEmpty && dosen['nidn'] == nidn) {
-                    ponsel = dosen['ponsel'];
-                    statusWa = dosen['status_wa'];
-                    break;
+                for (var dosenData in prodiData) {
+                  if (nama.isNotEmpty && dosenData['nama'] != null) {
+                    String jsonNama = dosenData['nama'].toString();
+                    String normalizedJsonNama = jsonNama
+                        .toLowerCase()
+                        .replaceAll(RegExp(r'[.,\s]+'), ' ')  
+                        .replaceAll(RegExp(r'\s+'), ' ')      
+                        .trim();
+                    
+                    bool isMatch = normalizedNama == normalizedJsonNama;
+                    
+                    if (!isMatch) {
+                      List<String> namaWords = normalizedNama.split(' ').where((w) => w.length > 2).toList();
+                      List<String> jsonWords = normalizedJsonNama.split(' ').where((w) => w.length > 2).toList();
+                      
+                      if (namaWords.isNotEmpty && jsonWords.isNotEmpty) {
+                        String firstName = namaWords[0];
+                        bool firstNameMatch = jsonWords.any((jw) => 
+                          jw == firstName || 
+                          (jw.length >= 4 && firstName.length >= 4 && 
+                           (jw.startsWith(firstName.substring(0, 3)) || 
+                            firstName.startsWith(jw.substring(0, 3))))
+                        );
+                        
+                        if (firstNameMatch) {
+                          int exactMatches = 0;
+                          for (var word in namaWords) {
+                            if (jsonWords.contains(word)) {
+                              exactMatches++;
+                            }
+                          }
+                          
+                          double similarity = exactMatches / namaWords.length;
+                          if (similarity >= 0.8) {
+                            isMatch = true;
+                          }
+                        }
+                      }
+                    }
+                    
+                    if (isMatch) {
+                      ponsel = dosenData['ponsel']?.toString();
+                      statusWa = dosenData['status_wa']?.toString();
+                      print('Matched dosen: $nama with ${dosenData['nama']}');
+                      break;
+                    }
                   }
                 }
                 if (ponsel != null) break;
               }
+            }
+            
+            if (ponsel == null) {
+              print('No phone number found for: $nama');
             }
           }
         } catch (e) {
