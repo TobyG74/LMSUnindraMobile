@@ -20,6 +20,7 @@ class ForumScreen extends StatefulWidget {
 class _ForumScreenState extends State<ForumScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   
   bool _isLoading = true;
   bool _isSending = false;
@@ -32,9 +33,24 @@ class _ForumScreenState extends State<ForumScreen> {
     _loadForumDetail();
   }
 
+  void _setDefaultReplyTarget() {
+    if (_forumData != null && _forumData!['main_post'] != null) {
+      final mainPost = _forumData!['main_post'] as Map<String, dynamic>;
+      setState(() {
+        _replyingTo = {
+          ...mainPost,
+          '_reply_author': mainPost['author_name'] ?? '',
+          '_reply_message': mainPost['content'] ?? '',
+          '_is_main_post': true,
+        };
+      });
+    }
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -46,6 +62,9 @@ class _ForumScreenState extends State<ForumScreen> {
       setState(() {
         _forumData = data;
       });
+      
+      // Automatically set reply target to main post
+      _setDefaultReplyTarget();
     } catch (e) {
       if (mounted) {
         _showSnackBar('Error: $e');
@@ -71,7 +90,15 @@ class _ForumScreenState extends State<ForumScreen> {
     try {
       final formattedMessage = _convertWhatsAppFormatToHtml(_messageController.text.trim());
       
-      await _apiService.submitForumReply(
+      print('Sending reply with:');
+      print('  parent_id: ${_replyingTo!['parent_id']}');
+      print('  kd_jdw_enc: ${_replyingTo!['kd_jdw_enc']}');
+      print('  id_aktifitas: ${_replyingTo!['id_aktifitas']}');
+      print('  reply_id: ${_replyingTo!['reply_id']}');
+      print('  forum_nama: ${_replyingTo!['forum_nama']}');
+      print('  message: $formattedMessage');
+      
+      final result = await _apiService.submitForumReply(
         parentId: _replyingTo!['parent_id'] ?? '0',
         kdJdwEnc: _replyingTo!['kd_jdw_enc'] ?? '',
         idAktifitas: _replyingTo!['id_aktifitas'] ?? '',
@@ -79,17 +106,31 @@ class _ForumScreenState extends State<ForumScreen> {
         forumNama: _replyingTo!['forum_nama'] ?? '',
         message: formattedMessage,
       );
+      
+      print('Submit result: $result');
 
       if (mounted) {
         _showSnackBar('Pesan berhasil dikirim');
         _messageController.clear();
-        setState(() => _replyingTo = null);
-        await Future.delayed(const Duration(seconds: 2));
+        
+        // Reload forum detail untuk menampilkan pesan baru
+        await Future.delayed(const Duration(milliseconds: 500));
         await _loadForumDetail();
+        
+        // Scroll ke bawah untuk melihat pesan baru
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
       }
     } catch (e) {
+      print('Error sending reply: $e');
       if (mounted) {
-        _showSnackBar('Error: $e');
+        _showSnackBar('Gagal mengirim pesan: $e');
       }
     }
 
@@ -135,6 +176,10 @@ class _ForumScreenState extends State<ForumScreen> {
   }
 
   Widget _buildFormattedText(String htmlText) {
+    if (htmlText.isEmpty) {
+      return const Text('');
+    }
+    
     try {
       final document = html_parser.parse(htmlText);
       final body = document.body;
@@ -143,8 +188,14 @@ class _ForumScreenState extends State<ForumScreen> {
         return Text(htmlText);
       }
       
+      // Cek apakah ada konten di body
+      if (body.text.trim().isEmpty) {
+        return Text(htmlText);
+      }
+      
       return _buildTextSpanFromHtml(body);
     } catch (e) {
+      print('Error parsing HTML text: $e');
       return Text(htmlText);
     }
   }
@@ -205,7 +256,8 @@ class _ForumScreenState extends State<ForumScreen> {
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
+                        controller: _scrollController,
+                        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 60),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -318,11 +370,17 @@ class _ForumScreenState extends State<ForumScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: () => _setReplyingTo(
-                  mainPost,
-                  mainPost['author_name'] ?? '',
-                  mainPost['content'] ?? '',
-                ),
+                onPressed: () {
+                  final mainPost = _forumData!['main_post'] as Map<String, dynamic>;
+                  setState(() {
+                    _replyingTo = {
+                      ...mainPost,
+                      '_reply_author': mainPost['author_name'] ?? '',
+                      '_reply_message': mainPost['content'] ?? '',
+                      '_is_main_post': true,
+                    };
+                  });
+                },
                 icon: const Icon(Icons.reply, size: 18),
                 label: const Text('Reply'),
               ),
@@ -431,6 +489,8 @@ class _ForumScreenState extends State<ForumScreen> {
   }
 
   Widget _buildReplyInput() {
+    final bool isReplyingToMainPost = _replyingTo?['_is_main_post'] == true;
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -451,7 +511,7 @@ class _ForumScreenState extends State<ForumScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_replyingTo != null)
+          if (_replyingTo != null && !isReplyingToMainPost)
             Container(
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.only(bottom: 8),
@@ -500,7 +560,7 @@ class _ForumScreenState extends State<ForumScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => setState(() => _replyingTo = null),
+                    onPressed: () => _setDefaultReplyTarget(),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -516,7 +576,9 @@ class _ForumScreenState extends State<ForumScreen> {
                     TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        hintText: 'Tulis pesan...',
+                        hintText: isReplyingToMainPost 
+                            ? 'Tulis pesan di forum...' 
+                            : 'Tulis balasan...',
                         helperStyle: const TextStyle(fontSize: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
