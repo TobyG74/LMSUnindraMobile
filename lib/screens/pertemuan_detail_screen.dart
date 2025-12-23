@@ -383,6 +383,35 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
+          } else if (iconClass.contains('fa-youtube')) {
+            type = 'youtube';
+            icon = 'play_circle';
+            
+            final allLinks = firstDiv.querySelectorAll('a[onclick*="display_modal"]');
+            
+            for (var link in allLinks) {
+              final linkText = link.text.trim();
+              
+              if (linkText.isNotEmpty) {
+                if (linkText.contains(':')) {
+                  final parts = linkText.split(':');
+                  if (parts.length > 1) {
+                    title = parts[1].trim();
+                  } else {
+                    title = linkText;
+                  }
+                } else {
+                  title = linkText;
+                }
+                
+                final onClick = link.attributes['onclick'] ?? link.attributes['onClick'] ?? '';
+                final match = RegExp(r"display_modal\('https://lms\.unindra\.ac\.id/member_video/kelas_yt/([^']+)'").firstMatch(onClick);
+                if (match != null) {
+                  externalUrl = match.group(1);
+                }
+                break;
+              }
+            }
           }
         }
 
@@ -873,6 +902,123 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     }
   }
 
+  Future<void> _handleYouTubeAction(MateriItem item) async {
+    if (item.url == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Mengambil link YouTube...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final realUrl = await _apiService.fetchYouTubeUrl(item.url!);
+      
+      if (mounted) Navigator.pop(context);
+      
+      if (realUrl != null && realUrl.isNotEmpty) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.play_circle, color: Colors.red.shade600),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('YouTube Video')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item.description.isNotEmpty) ...[
+                    Text(
+                      item.description,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, color: Colors.red.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            realUrl,
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 13,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tutup'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final url = Uri.parse(realUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      _showSnackBar('Tidak dapat membuka YouTube');
+                    }
+                  },
+                  icon: const Icon(Icons.play_circle),
+                  label: const Text('Buka YouTube'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          _showSnackBar('Link YouTube tidak ditemukan');
+        }
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        _showSnackBar('Error mengambil link YouTube: $e');
+      }
+    }
+  }
+
   Future<void> _handleAssignmentAction(MateriItem item) async {
     if (item.url == null) {
       _showSnackBar('URL assignment tidak ditemukan');
@@ -920,6 +1066,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         return Icons.forum;
       case 'video_call':
         return Icons.video_call;
+      case 'play_circle':
+        return Icons.play_circle;
       default:
         return Icons.description;
     }
@@ -949,6 +1097,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         return Colors.deepPurple;
       case 'gmeet':
         return Colors.green.shade600;
+      case 'youtube':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -1045,7 +1195,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                       ),
                     )
                   : SliverPadding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 60),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -1066,6 +1216,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                             _handleForumAction(item);
                           } else if (item.type == 'gmeet') {
                             _handleGoogleMeetAction(item);
+                          } else if (item.type == 'youtube') {
+                            _handleYouTubeAction(item);
                           } else if (item.downloadUrl != null) {
                             _handleFileAction(item);
                           }
