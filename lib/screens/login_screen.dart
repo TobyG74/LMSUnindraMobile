@@ -47,8 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (savedCredentials != null) {
       setState(() {
         _usernameController.text = savedCredentials['username']!;
-        _passwordController.text = savedCredentials['password']!;
-        _rememberMe = true;
+        // Hanya isi password jika ada (remember me = true)
+        if (savedCredentials.containsKey('password')) {
+          _passwordController.text = savedCredentials['password']!;
+          _rememberMe = true;
+        } else {
+          // Username tersimpan tapi tidak ada password (setelah logout)
+          _passwordController.clear();
+          _rememberMe = false;
+        }
       });
     }
     
@@ -101,7 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
         _captchaController.text = result;
       });
       
-      if (_isFirstLoad && mounted && result != '0' && _usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+      // Auto-login hanya jika remember me aktif dan ada username + password
+      if (_isFirstLoad && mounted && result != '0' && _rememberMe && _usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
           _isFirstLoad = false; 
