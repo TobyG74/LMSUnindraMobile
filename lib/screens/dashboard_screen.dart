@@ -343,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ],
                                 ),
-                                child: _userPhotoUrl != null
+                                child: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty && _userPhotoUrl!.startsWith('http')
                                     ? CircleAvatar(
                                         radius: 40,
                                         backgroundColor: Colors.white,
@@ -353,6 +353,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.cover,
+                                            loadingBuilder: (context, child, loadingProgress) {
+                                              if (loadingProgress == null) return child;
+                                              return const Center(
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF073163)),
+                                                ),
+                                              );
+                                            },
                                             errorBuilder: (context, error, stackTrace) {
                                               return const Icon(
                                                 Icons.person,
@@ -443,7 +452,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 60),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
