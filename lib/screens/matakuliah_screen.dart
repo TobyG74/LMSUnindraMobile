@@ -649,7 +649,7 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
                           ),
                         )
                       : SliverPadding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 60),
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
@@ -666,130 +666,176 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
   }
 
   Widget _buildMataKuliahCard(MataKuliahItem mataKuliah) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MataKuliahDetailScreen(
-                namaMataKuliah: mataKuliah.nama,
-                kodeMataKuliah: mataKuliah.kode,
-                kelas: mataKuliah.kelas,
-                semester: mataKuliah.semester,
-                sks: mataKuliah.sks,
-                dosenPengampu: mataKuliah.dosen,
-                nomorHpDosen: mataKuliah.nomorHp,
-                fotoDosen: mataKuliah.fotoDosen,
-                ruang: mataKuliah.ruang,
-                waktu: mataKuliah.waktu,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.1),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MataKuliahDetailScreen(
+                  namaMataKuliah: mataKuliah.nama,
+                  kodeMataKuliah: mataKuliah.kode,
+                  kelas: mataKuliah.kelas,
+                  semester: mataKuliah.semester,
+                  sks: mataKuliah.sks,
+                  dosenPengampu: mataKuliah.dosen,
+                  nomorHpDosen: mataKuliah.nomorHp,
+                  fotoDosen: mataKuliah.fotoDosen,
+                  ruang: mataKuliah.ruang,
+                  waktu: mataKuliah.waktu,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border(
+                left: BorderSide(
+                  color: mataKuliah.color,
+                  width: 4,
+                ),
               ),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: mataKuliah.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  mataKuliah.icon,
-                  color: mataKuliah.color,
-                  size: 28,
-                ),
-              ),
-              
-              const SizedBox(width: 16),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      mataKuliah.nama,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      mataKuliah.kode,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        _buildChip(
-                          Icons.class_,
-                          'Kelas ${mataKuliah.kelas}',
-                          Colors.green,
-                        ),
-                        if (mataKuliah.waktu != null && mataKuliah.waktu!.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: _buildChip(
-                              Icons.schedule,
-                              mataKuliah.waktu!,
-                              Colors.orange,
-                            ),
-                          ),
-                        ],
+            child: Row(
+              children: [
+                // Icon dengan gradient background
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        mataKuliah.color.withOpacity(0.15),
+                        mataKuliah.color.withOpacity(0.08),
                       ],
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    mataKuliah.icon,
+                    color: mataKuliah.color,
+                    size: 28,
+                  ),
                 ),
-              ),
-              
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey.shade400,
-              ),
-            ],
+                
+                const SizedBox(width: 14),
+                
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nama Mata Kuliah
+                      Text(
+                        mataKuliah.nama,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      const SizedBox(height: 6),
+                      
+                      // Kode Mata Kuliah
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          mataKuliah.kode,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 6),
+                      
+                      // Kelas dan Waktu
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Kelas ${mataKuliah.kelas}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ),
+                          if (mataKuliah.waktu != null && mataKuliah.waktu!.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  mataKuliah.waktu!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.orange.shade700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(width: 8),
+                
+                // Arrow Icon
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }
