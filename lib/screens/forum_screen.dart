@@ -89,15 +89,6 @@ class _ForumScreenState extends State<ForumScreen> {
 
     try {
       final formattedMessage = _convertWhatsAppFormatToHtml(_messageController.text.trim());
-      
-      print('Sending reply with:');
-      print('  parent_id: ${_replyingTo!['parent_id']}');
-      print('  kd_jdw_enc: ${_replyingTo!['kd_jdw_enc']}');
-      print('  id_aktifitas: ${_replyingTo!['id_aktifitas']}');
-      print('  reply_id: ${_replyingTo!['reply_id']}');
-      print('  forum_nama: ${_replyingTo!['forum_nama']}');
-      print('  message: $formattedMessage');
-      
       final result = await _apiService.submitForumReply(
         parentId: _replyingTo!['parent_id'] ?? '0',
         kdJdwEnc: _replyingTo!['kd_jdw_enc'] ?? '',
@@ -107,17 +98,13 @@ class _ForumScreenState extends State<ForumScreen> {
         message: formattedMessage,
       );
       
-      print('Submit result: $result');
-
       if (mounted) {
         _showSnackBar('Pesan berhasil dikirim');
         _messageController.clear();
         
-        // Reload forum detail untuk menampilkan pesan baru
         await Future.delayed(const Duration(milliseconds: 500));
         await _loadForumDetail();
         
-        // Scroll ke bawah untuk melihat pesan baru
         await Future.delayed(const Duration(milliseconds: 300));
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -128,7 +115,6 @@ class _ForumScreenState extends State<ForumScreen> {
         }
       }
     } catch (e) {
-      print('Error sending reply: $e');
       if (mounted) {
         _showSnackBar('Gagal mengirim pesan: $e');
       }
@@ -195,7 +181,6 @@ class _ForumScreenState extends State<ForumScreen> {
       
       return _buildTextSpanFromHtml(body);
     } catch (e) {
-      print('Error parsing HTML text: $e');
       return Text(htmlText);
     }
   }
