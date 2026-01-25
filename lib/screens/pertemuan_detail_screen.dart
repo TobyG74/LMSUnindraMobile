@@ -50,10 +50,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
     try {
       final urlToFetch = widget.encryptedKelasId ?? widget.encryptedUrl;
-      
+
       if (urlToFetch != null) {
         final html = await _apiService.fetchPertemuanPage(urlToFetch);
-        
+
         if (html != null) {
           _parseHtmlContent(html);
         }
@@ -79,14 +79,14 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         }
       }
     }
-    
+
     if (items.isEmpty) {
       var rows = document.querySelectorAll('table tbody tr');
       if (rows.isNotEmpty) {
         _parseMateriRows(rows, items);
       }
     }
-    
+
     setState(() {
       _materiList = items;
     });
@@ -100,13 +100,14 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
           continue;
         }
 
-        final allDivs = mailboxStar.querySelectorAll('div.col-md-4, div.col-md-2');
+        final allDivs =
+            mailboxStar.querySelectorAll('div.col-md-4, div.col-md-2');
         if (allDivs.isEmpty) continue;
 
         final firstDiv = allDivs[0];
-        
+
         final iconElement = firstDiv.querySelector('i');
-        
+
         String type = 'other';
         String icon = 'description';
         String? viewUrl;
@@ -114,23 +115,55 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         String? assignmentUrl;
         String? externalUrl;
         String title = '';
-        
-        if (iconElement != null) {
+
+        final assignmentLinks =
+            firstDiv.querySelectorAll('a[href*="member_tugas"]');
+        if (assignmentLinks.isNotEmpty) {
+          type = 'assignment';
+          icon = 'assignment';
+
+          for (var link in assignmentLinks) {
+            var pTag = link.querySelector('p');
+            var linkText = pTag?.text.trim() ?? link.text.trim();
+
+            if (linkText.isNotEmpty) {
+              if (linkText.contains(':')) {
+                final parts = linkText.split(':');
+                if (parts.length > 1) {
+                  title = parts[1].trim();
+                } else {
+                  title = linkText;
+                }
+              } else {
+                title = linkText;
+              }
+              final href = link.attributes['href'] ?? '';
+              final match =
+                  RegExp(r'member_tugas/kelas/(.+)$').firstMatch(href);
+              if (match != null) {
+                assignmentUrl = match.group(1);
+              }
+              break;
+            }
+          }
+        } else if (iconElement != null) {
           final iconClass = iconElement.className;
-          
+
           if (iconClass.contains('fa-file-pdf')) {
             type = 'pdf';
             icon = 'picture_as_pdf';
-            
-            final viewLink = firstDiv.querySelector('a[onClick*="lihat_berkas"]');
+
+            final viewLink =
+                firstDiv.querySelector('a[onClick*="lihat_berkas"]');
             if (viewLink != null) {
               final onClick = viewLink.attributes['onClick'] ?? '';
-              final match = RegExp(r"lihat_berkas\('([^']+)'\)").firstMatch(onClick);
+              final match =
+                  RegExp(r"lihat_berkas\('([^']+)'\)").firstMatch(onClick);
               if (match != null) {
                 viewUrl = match.group(1);
               }
             }
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -146,11 +179,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-file-word')) {
             type = 'word';
             icon = 'description';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -166,11 +198,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-file-powerpoint')) {
             type = 'powerpoint';
             icon = 'slideshow';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -186,11 +217,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-file-excel')) {
             type = 'excel';
             icon = 'table_chart';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -206,11 +236,11 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
-          } else if (iconClass.contains('fa-file-archive') || iconClass.contains('fa-file-zip')) {
+          } else if (iconClass.contains('fa-file-archive') ||
+              iconClass.contains('fa-file-zip')) {
             type = 'archive';
             icon = 'folder_zip';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -226,11 +256,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-file-image')) {
             type = 'image';
             icon = 'image';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -246,11 +275,10 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-file')) {
             type = 'file';
             icon = 'insert_drive_file';
-            
+
             final allLinks = firstDiv.querySelectorAll('a');
             for (var link in allLinks) {
               final href = link.attributes['href'] ?? '';
@@ -266,12 +294,12 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-suitcase')) {
             type = 'assignment';
             icon = 'assignment';
-            
-            final allLinks = firstDiv.querySelectorAll('a[href*="member_tugas"]');
+
+            final allLinks =
+                firstDiv.querySelectorAll('a[href*="member_tugas"]');
             for (var link in allLinks) {
               final linkText = link.text.trim();
               if (linkText.isNotEmpty) {
@@ -286,19 +314,20 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                   title = linkText;
                 }
                 final href = link.attributes['href'] ?? '';
-                final match = RegExp(r'member_tugas/kelas/(.+)$').firstMatch(href);
+                final match =
+                    RegExp(r'member_tugas/kelas/(.+)$').firstMatch(href);
                 if (match != null) {
                   assignmentUrl = match.group(1);
                 }
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-globe')) {
             type = 'url';
             icon = 'link';
-            
-            final allLinks = firstDiv.querySelectorAll('a[onclick*="display_modal"]');
+
+            final allLinks =
+                firstDiv.querySelectorAll('a[onclick*="display_modal"]');
             for (var link in allLinks) {
               final linkText = link.text.trim();
               if (linkText.isNotEmpty) {
@@ -312,25 +341,29 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 } else {
                   title = linkText;
                 }
-                final onClick = link.attributes['onclick'] ?? link.attributes['onClick'] ?? '';
-                final match = RegExp(r"display_modal\('https://lms\.unindra\.ac\.id/member_url/kelas/([^']+)'").firstMatch(onClick);
+                final onClick = link.attributes['onclick'] ??
+                    link.attributes['onClick'] ??
+                    '';
+                final match = RegExp(
+                        r"display_modal\('https://lms\.unindra\.ac\.id/member_url/kelas/([^']+)'")
+                    .firstMatch(onClick);
                 if (match != null) {
                   externalUrl = match.group(1);
                 }
                 break;
               }
             }
-            
           } else if (iconClass.contains('fa-comment')) {
             type = 'forum';
             icon = 'forum';
-            
-            final allLinks = firstDiv.querySelectorAll('a[href*="member_forum"]');
-            
+
+            final allLinks =
+                firstDiv.querySelectorAll('a[href*="member_forum"]');
+
             for (var link in allLinks) {
               final linkText = link.text.trim();
               final href = link.attributes['href'] ?? '';
-              
+
               if (linkText.isNotEmpty) {
                 if (linkText.contains(':')) {
                   final parts = linkText.split(':');
@@ -342,7 +375,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 } else {
                   title = linkText;
                 }
-                final match = RegExp(r'member_forum/kelas/(.+)$').firstMatch(href);
+                final match =
+                    RegExp(r'member_forum/kelas/(.+)$').firstMatch(href);
                 if (match != null) {
                   externalUrl = match.group(1);
                 }
@@ -352,12 +386,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
           } else if (iconClass.contains('fa-video-camera')) {
             type = 'gmeet';
             icon = 'video_call';
-            
-            final allLinks = firstDiv.querySelectorAll('a[onclick*="display_modal"]');
-            
+
+            final allLinks =
+                firstDiv.querySelectorAll('a[onclick*="display_modal"]');
+
             for (var link in allLinks) {
               final linkText = link.text.trim();
-              
+
               if (linkText.isNotEmpty) {
                 if (linkText.toLowerCase().contains('google meet')) {
                   if (linkText.contains(':')) {
@@ -374,9 +409,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 } else {
                   title = linkText;
                 }
-                
-                final onClick = link.attributes['onclick'] ?? link.attributes['onClick'] ?? '';
-                final match = RegExp(r"display_modal\('https://lms\.unindra\.ac\.id/member_url/kelas_gmeet/([^']+)'").firstMatch(onClick);
+
+                final onClick = link.attributes['onclick'] ??
+                    link.attributes['onClick'] ??
+                    '';
+                final match = RegExp(
+                        r"display_modal\('https://lms\.unindra\.ac\.id/member_url/kelas_gmeet/([^']+)'")
+                    .firstMatch(onClick);
                 if (match != null) {
                   externalUrl = match.group(1);
                 }
@@ -386,12 +425,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
           } else if (iconClass.contains('fa-youtube')) {
             type = 'youtube';
             icon = 'play_circle';
-            
-            final allLinks = firstDiv.querySelectorAll('a[onclick*="display_modal"]');
-            
+
+            final allLinks =
+                firstDiv.querySelectorAll('a[onclick*="display_modal"]');
+
             for (var link in allLinks) {
               final linkText = link.text.trim();
-              
+
               if (linkText.isNotEmpty) {
                 if (linkText.contains(':')) {
                   final parts = linkText.split(':');
@@ -403,9 +443,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                 } else {
                   title = linkText;
                 }
-                
-                final onClick = link.attributes['onclick'] ?? link.attributes['onClick'] ?? '';
-                final match = RegExp(r"display_modal\('https://lms\.unindra\.ac\.id/member_video/kelas_yt/([^']+)'").firstMatch(onClick);
+
+                final onClick = link.attributes['onclick'] ??
+                    link.attributes['onClick'] ??
+                    '';
+                final match = RegExp(
+                        r"display_modal\('https://lms\.unindra\.ac\.id/member_video/kelas_yt/([^']+)'")
+                    .firstMatch(onClick);
                 if (match != null) {
                   externalUrl = match.group(1);
                 }
@@ -413,7 +457,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
               }
             }
           }
-        }
+        } 
 
         String description = '';
         if (allDivs.length > 1) {
@@ -453,7 +497,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         }
       }
     }
-    
+
     switch (item.type) {
       case 'pdf':
         return 'pdf';
@@ -472,14 +516,15 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     }
   }
 
-  Future<void> _handleFileAction(MateriItem item, {bool download = false}) async {
+  Future<void> _handleFileAction(MateriItem item,
+      {bool download = false}) async {
     if (item.downloadUrl == null) {
       _showSnackBar('URL download tidak ditemukan');
       return;
     }
 
     bool isGranted = false;
-    
+
     if (await Permission.manageExternalStorage.isGranted) {
       isGranted = true;
     } else if (await Permission.storage.isGranted) {
@@ -495,7 +540,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         }
       }
     }
-    
+
     if (!isGranted) {
       if (mounted) {
         _showSnackBar('Izin penyimpanan diperlukan untuk download');
@@ -513,51 +558,57 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       } else {
         baseDir = await getApplicationDocumentsDirectory();
       }
-      
+
       final mataKuliahFolder = widget.mataKuliah ?? 'Materi';
-      final pertemuanFolder = widget.pertemuanKe != null ? 'Pertemuan ${widget.pertemuanKe}' : 'Pertemuan';
-      
+      final pertemuanFolder = widget.pertemuanKe != null
+          ? 'Pertemuan ${widget.pertemuanKe}'
+          : 'Pertemuan';
+
       final lmsDir = Directory('${baseDir.path}/LMS');
       final mkDir = Directory('${lmsDir.path}/$mataKuliahFolder');
       final pertemuanDir = Directory('${mkDir.path}/$pertemuanFolder');
-      
+
       if (!await lmsDir.exists()) await lmsDir.create(recursive: true);
       if (!await mkDir.exists()) await mkDir.create(recursive: true);
-      if (!await pertemuanDir.exists()) await pertemuanDir.create(recursive: true);
-      
+      if (!await pertemuanDir.exists())
+        await pertemuanDir.create(recursive: true);
+
       final fileExt = _getFileExtension(item);
-      String cleanFileName = item.description.isNotEmpty ? item.description : item.title;
+      String cleanFileName =
+          item.description.isNotEmpty ? item.description : item.title;
       if (cleanFileName.isEmpty) {
         cleanFileName = 'materi_${DateTime.now().millisecondsSinceEpoch}';
       }
-      
+
       cleanFileName = cleanFileName.replaceAll(RegExp(r'^Modul\s+\d+-'), '');
       cleanFileName = cleanFileName.replaceAll(RegExp(r'_\d+$'), '');
       cleanFileName = cleanFileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      
+
       final fileName = '$cleanFileName.$fileExt';
       final savePath = '${pertemuanDir.path}/$fileName';
       final file = File(savePath);
-      
+
       if (await file.exists()) {
         if (download) {
-          _showSnackBar('File sudah tersimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
+          _showSnackBar(
+              'File sudah tersimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
           return;
         } else {
           final openResult = await OpenFilex.open(savePath);
           if (openResult.type != ResultType.done) {
-            _showSnackBar('File ada tetapi tidak dapat dibuka. Silakan buka manual.');
+            _showSnackBar(
+                'File ada tetapi tidak dapat dibuka. Silakan buka manual.');
           }
           return;
         }
       }
 
       final fileTypeName = _getFileTypeName(item.type);
-      
+
       final progressNotifier = ValueNotifier<double>(0.0);
       final receivedNotifier = ValueNotifier<int>(0);
       final totalNotifier = ValueNotifier<int>(0);
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -606,9 +657,9 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
           ),
         );
       }
-      
+
       final result = await _apiService.downloadFile(
-        item.downloadUrl!, 
+        item.downloadUrl!,
         savePath,
         onReceiveProgress: (received, total) {
           if (total > 0) {
@@ -630,11 +681,13 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
       if (result != null) {
         if (download) {
-          _showSnackBar('File disimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
+          _showSnackBar(
+              'File disimpan di: Documents/LMS/$mataKuliahFolder/$pertemuanFolder/$fileName');
         } else {
           final openResult = await OpenFilex.open(savePath);
           if (openResult.type != ResultType.done) {
-            _showSnackBar('File diunduh tetapi tidak dapat dibuka. Silakan buka manual.');
+            _showSnackBar(
+                'File diunduh tetapi tidak dapat dibuka. Silakan buka manual.');
           }
         }
       } else {
@@ -692,9 +745,9 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
     try {
       final realUrl = await _apiService.fetchExternalUrl(item.url!);
-      
+
       if (mounted) Navigator.pop(context);
-      
+
       if (realUrl != null && realUrl.isNotEmpty) {
         if (mounted) {
           showDialog(
@@ -746,7 +799,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                     Navigator.pop(context);
                     final url = Uri.parse(realUrl);
                     if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                      await launchUrl(url,
+                          mode: LaunchMode.externalApplication);
                     } else {
                       _showSnackBar('Tidak dapat membuka URL');
                     }
@@ -810,9 +864,9 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
     try {
       final realUrl = await _apiService.fetchGoogleMeetUrl(item.url!);
-      
+
       if (mounted) Navigator.pop(context);
-      
+
       if (realUrl != null && realUrl.isNotEmpty) {
         if (mounted) {
           showDialog(
@@ -845,7 +899,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.link, color: Colors.green.shade700, size: 20),
+                        Icon(Icons.link,
+                            color: Colors.green.shade700, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -873,7 +928,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                     Navigator.pop(context);
                     final url = Uri.parse(realUrl);
                     if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                      await launchUrl(url,
+                          mode: LaunchMode.externalApplication);
                     } else {
                       _showSnackBar('Tidak dapat membuka Google Meet');
                     }
@@ -927,9 +983,9 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
     try {
       final realUrl = await _apiService.fetchYouTubeUrl(item.url!);
-      
+
       if (mounted) Navigator.pop(context);
-      
+
       if (realUrl != null && realUrl.isNotEmpty) {
         if (mounted) {
           showDialog(
@@ -990,7 +1046,8 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                     Navigator.pop(context);
                     final url = Uri.parse(realUrl);
                     if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                      await launchUrl(url,
+                          mode: LaunchMode.externalApplication);
                     } else {
                       _showSnackBar('Tidak dapat membuka YouTube');
                     }
@@ -1106,11 +1163,11 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayTitle = widget.title ?? 
-                        widget.namaMataKuliah ?? 
-                        widget.mataKuliah ?? 
-                        'Pertemuan';
-    
+    final displayTitle = widget.title ??
+        widget.namaMataKuliah ??
+        widget.mataKuliah ??
+        'Pertemuan';
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -1195,136 +1252,153 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                       ),
                     )
                   : SliverPadding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 60),
+                      padding: const EdgeInsets.only(
+                          left: 16, right: 16, top: 16, bottom: 60),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final item = _materiList[index];
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          if (item.type == 'assignment') {
-                            _handleAssignmentAction(item);
-                          } else if (item.type == 'url') {
-                            _handleUrlAction(item);
-                          } else if (item.type == 'forum') {
-                            _handleForumAction(item);
-                          } else if (item.type == 'gmeet') {
-                            _handleGoogleMeetAction(item);
-                          } else if (item.type == 'youtube') {
-                            _handleYouTubeAction(item);
-                          } else if (item.downloadUrl != null) {
-                            _handleFileAction(item);
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: _getIconColor(item.type).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      _getIconData(item.icon),
-                                      color: _getIconColor(item.type),
-                                      size: 28,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.title,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
+                            return Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  if (item.type == 'assignment') {
+                                    _handleAssignmentAction(item);
+                                  } else if (item.type == 'url') {
+                                    _handleUrlAction(item);
+                                  } else if (item.type == 'forum') {
+                                    _handleForumAction(item);
+                                  } else if (item.type == 'gmeet') {
+                                    _handleGoogleMeetAction(item);
+                                  } else if (item.type == 'youtube') {
+                                    _handleYouTubeAction(item);
+                                  } else if (item.downloadUrl != null) {
+                                    _handleFileAction(item);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: _getIconColor(item.type)
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              _getIconData(item.icon),
+                                              color: _getIconColor(item.type),
+                                              size: 28,
+                                            ),
                                           ),
-                                        ),
-                                        if (item.date.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            item.date,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade600,
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.title,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                if (item.date.isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    item.date,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      if (item.description.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          item.description,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade700,
+                                            height: 1.4,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ],
-                                    ),
+                                      if (item.downloadUrl != null &&
+                                          (item.type == 'pdf' ||
+                                              item.type == 'word' ||
+                                              item.type == 'powerpoint' ||
+                                              item.type == 'excel' ||
+                                              item.type == 'image' ||
+                                              item.type == 'archive' ||
+                                              item.type == 'file')) ...[
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: OutlinedButton.icon(
+                                                onPressed: () =>
+                                                    _handleFileAction(item),
+                                                icon: const Icon(
+                                                    Icons.visibility,
+                                                    size: 18),
+                                                label: const Text('Buka'),
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor:
+                                                      _getIconColor(item.type),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                onPressed: () =>
+                                                    _handleFileAction(item,
+                                                        download: true),
+                                                icon: const Icon(Icons.download,
+                                                    size: 18),
+                                                label: const Text('Download'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      _getIconColor(item.type),
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                              if (item.description.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                Text(
-                                  item.description,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade700,
-                                    height: 1.4,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                              if (item.downloadUrl != null && 
-                                  (item.type == 'pdf' || item.type == 'word' || 
-                                   item.type == 'powerpoint' || item.type == 'excel' || 
-                                   item.type == 'image' || item.type == 'archive' || 
-                                   item.type == 'file')) ...[
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _handleFileAction(item),
-                                        icon: const Icon(Icons.visibility, size: 18),
-                                        label: const Text('Buka'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: _getIconColor(item.type),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () => _handleFileAction(item, download: true),
-                                        icon: const Icon(Icons.download, size: 18),
-                                        label: const Text('Download'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: _getIconColor(item.type),
-                                          foregroundColor: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+                            );
+                          },
+                          childCount: _materiList.length,
                         ),
                       ),
-                    );
-                  },
-                  childCount: _materiList.length,
-                ),
-              ),
-            ),
+                    ),
         ],
       ),
     );
