@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class AssignmentScreen extends StatefulWidget {
   final String encryptedUrl;
@@ -20,8 +22,11 @@ class AssignmentScreen extends StatefulWidget {
 
 class _AssignmentScreenState extends State<AssignmentScreen> {
   final ApiService _apiService = ApiService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = true;
   bool _isUploading = false;
+  bool _hasReminder1Hour = false;
+  bool _hasReminder30Min = false;
 
   Map<String, dynamic>? _assignmentData;
   File? _selectedFile;
@@ -31,6 +36,146 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   void initState() {
     super.initState();
     _loadAssignmentDetail();
+    _loadReminderStatus();
+  }
+
+  Future<void> _loadReminderStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key1h = 'reminder_1h_${widget.encryptedUrl}';
+    final key30m = 'reminder_30m_${widget.encryptedUrl}';
+    setState(() {
+      _hasReminder1Hour = prefs.getBool(key1h) ?? false;
+      _hasReminder30Min = prefs.getBool(key30m) ?? false;
+    });
+  }
+
+  DateTime? _parseDeadline(String? deadlineStr) {
+    if (deadlineStr == null || deadlineStr.isEmpty || deadlineStr == '-') {
+      return null;
+    }
+
+    try {
+      // Format: "Senin, 20 Januari 2026, 23:59"
+      final parts = deadlineStr.split(',');
+      if (parts.length < 3) return null;
+
+      final datePart = parts[1].trim(); // "20 Januari 2026"
+      final timePart = parts[2].trim(); // "23:59"
+
+      final dateComponents = datePart.split(' ');
+      if (dateComponents.length < 3) return null;
+
+      final day = int.tryParse(dateComponents[0]);
+      final monthName = dateComponents[1];
+      final year = int.tryParse(dateComponents[2]);
+
+      if (day == null || year == null) return null;
+
+      // Map bulan Indonesia ke angka
+      const months = {
+        'Januari': 1,
+        'Februari': 2,
+        'Maret': 3,
+        'April': 4,
+        'Mei': 5,
+        'Juni': 6,
+        'Juli': 7,
+        'Agustus': 8,
+        'September': 9,
+        'Oktober': 10,
+        'November': 11,
+        'Desember': 12,
+      };
+
+      final month = months[monthName];
+      if (month == null) return null;
+
+      final timeComponents = timePart.split(':');
+      if (timeComponents.length < 2) return null;
+
+      final hour = int.tryParse(timeComponents[0]);
+      final minute = int.tryParse(timeComponents[1]);
+
+      if (hour == null || minute == null) return null;
+
+      return DateTime(year, month, day, hour, minute);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _scheduleReminder(int minutesBefore) async {
+    final deadline = _parseDeadline(_assignmentData?['deadline']);
+    if (deadline == null) {
+      _showSnackBar('Format deadline tidak valid');
+      return;
+    }
+
+    final now = DateTime.now();
+    final reminderTime = deadline.subtract(Duration(minutes: minutesBefore));
+
+    if (reminderTime.isBefore(now)) {
+      _showSnackBar('Waktu pengingat sudah terlewat');
+      return;
+    }
+
+    final hasPermission = await _notificationService.requestPermission();
+    if (!hasPermission) {
+      _showSnackBar('Izin notifikasi ditolak');
+      return;
+    }
+
+    final notificationId = '${widget.encryptedUrl}_${minutesBefore}'.hashCode;
+
+    await _notificationService.scheduleAssignmentReminder(
+      id: notificationId,
+      title: 'Pengingat Tugas: ${widget.title}',
+      body: minutesBefore == 60
+          ? 'Tugas akan berakhir 1 jam lagi!'
+          : 'Tugas akan berakhir 30 menit lagi!',
+      scheduledTime: reminderTime,
+    );
+
+    // Save reminder status
+    final prefs = await SharedPreferences.getInstance();
+    final key = minutesBefore == 60
+        ? 'reminder_1h_${widget.encryptedUrl}'
+        : 'reminder_30m_${widget.encryptedUrl}';
+    await prefs.setBool(key, true);
+
+    setState(() {
+      if (minutesBefore == 60) {
+        _hasReminder1Hour = true;
+      } else {
+        _hasReminder30Min = true;
+      }
+    });
+
+    final timeStr = minutesBefore == 60 ? '1 jam' : '30 menit';
+    _showSnackBar('Pengingat $timeStr sebelum deadline berhasil diatur');
+  }
+
+  Future<void> _cancelReminder(int minutesBefore) async {
+    final notificationId = '${widget.encryptedUrl}_${minutesBefore}'.hashCode;
+    await _notificationService.cancelNotification(notificationId);
+
+    // Remove from preferences
+    final prefs = await SharedPreferences.getInstance();
+    final key = minutesBefore == 60
+        ? 'reminder_1h_${widget.encryptedUrl}'
+        : 'reminder_30m_${widget.encryptedUrl}';
+    await prefs.remove(key);
+
+    setState(() {
+      if (minutesBefore == 60) {
+        _hasReminder1Hour = false;
+      } else {
+        _hasReminder30Min = false;
+      }
+    });
+
+    final timeStr = minutesBefore == 60 ? '1 jam' : '30 menit';
+    _showSnackBar('Pengingat $timeStr dibatalkan');
   }
 
   Future<void> _loadAssignmentDetail() async {
@@ -116,8 +261,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
     try {
       final fileParam = _assignmentData!['assignment_file_param'];
-      final url = Uri.parse(
-          '${ApiService.baseUrl}/member_tugas/lihat_pdf/$fileParam');
+      final url =
+          Uri.parse('${ApiService.baseUrl}/member_tugas/lihat_pdf/$fileParam');
 
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -434,7 +579,97 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
+
+                            // Reminder Section
+                            if (!_isDeadlinePassed()) ...[
+                              Card(
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.notifications_active,
+                                              color: Colors.purple.shade700,
+                                              size: 28),
+                                          const SizedBox(width: 12),
+                                          const Text(
+                                            'Pengingat Deadline',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Atur pengingat untuk deadline tugas ini:',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Tombol Ingatkan 1 Jam
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: _hasReminder1Hour
+                                              ? () => _cancelReminder(60)
+                                              : () => _scheduleReminder(60),
+                                          icon: Icon(_hasReminder1Hour
+                                              ? Icons.notifications_off
+                                              : Icons.notifications),
+                                          label: Text(_hasReminder1Hour
+                                              ? 'Batalkan Pengingat 1 Jam'
+                                              : 'Ingatkan Saya 1 Jam Sebelumnya'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _hasReminder1Hour
+                                                ? Colors.grey
+                                                : Colors.purple,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 14),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+
+                                      // Tombol Ingatkan 30 Menit
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: _hasReminder30Min
+                                              ? () => _cancelReminder(30)
+                                              : () => _scheduleReminder(30),
+                                          icon: Icon(_hasReminder30Min
+                                              ? Icons.notifications_off
+                                              : Icons.notifications),
+                                          label: Text(_hasReminder30Min
+                                              ? 'Batalkan Pengingat 30 Menit'
+                                              : 'Ingatkan Saya 30 Menit Sebelumnya'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _hasReminder30Min
+                                                ? Colors.grey
+                                                : Colors.deepPurple,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 14),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
 
                             // Upload Section
                             Card(
