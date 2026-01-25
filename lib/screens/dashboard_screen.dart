@@ -5,6 +5,8 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../services/update_service.dart';
+import '../widgets/update_dialog.dart';
 import 'login_screen.dart';
 import 'jadwal_screen.dart';
 import 'presensi_screen.dart';
@@ -30,26 +32,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    await Future.delayed(const Duration(seconds: 2));
+
+    final updateService = UpdateService();
+
+    final shouldCheck = await updateService.shouldCheckUpdate();
+    if (!shouldCheck) return;
+
+    final updateInfo = await updateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: !updateInfo.updateRequired,
+        builder: (context) => UpdateDialog(updateInfo: updateInfo),
+      );
+    }
   }
 
   Future<void> _loadUserData() async {
     try {
       final html = await _apiService.fetchDashboardPage();
       final document = html_parser.parse(html);
-      
+
       final userHeader = document.querySelector('li.user-header');
       if (userHeader != null) {
         final pTag = userHeader.querySelector('p');
         if (pTag != null) {
           _userName = pTag.text.trim();
         }
-        
+
         final imgTag = userHeader.querySelector('img.img-circle');
         if (imgTag != null) {
           _userPhotoUrl = imgTag.attributes['src'];
         }
       }
-      
+
       setState(() {
         _isLoadingUserData = false;
       });
@@ -92,7 +113,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                    Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange.shade700),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -157,7 +179,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.bug_report, size: 16, color: Colors.orange.shade700),
+                  Icon(Icons.bug_report,
+                      size: 16, color: Colors.orange.shade700),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -334,7 +357,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 3),
+                                  border:
+                                      Border.all(color: Colors.white, width: 3),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.2),
@@ -343,7 +367,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ],
                                 ),
-                                child: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty && _userPhotoUrl!.startsWith('http')
+                                child: _userPhotoUrl != null &&
+                                        _userPhotoUrl!.isNotEmpty &&
+                                        _userPhotoUrl!.startsWith('http')
                                     ? CircleAvatar(
                                         radius: 40,
                                         backgroundColor: Colors.white,
@@ -353,16 +379,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.cover,
-                                            loadingBuilder: (context, child, loadingProgress) {
-                                              if (loadingProgress == null) return child;
+                                            loadingBuilder: (context, child,
+                                                loadingProgress) {
+                                              if (loadingProgress == null)
+                                                return child;
                                               return const Center(
-                                                child: CircularProgressIndicator(
+                                                child:
+                                                    CircularProgressIndicator(
                                                   strokeWidth: 2,
-                                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF073163)),
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                              Color>(
+                                                          Color(0xFF073163)),
                                                 ),
                                               );
                                             },
-                                            errorBuilder: (context, error, stackTrace) {
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
                                               return const Icon(
                                                 Icons.person,
                                                 size: 45,
@@ -435,9 +468,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 onPressed: () async {
-                  final authService = Provider.of<AuthService>(context, listen: false);
+                  final authService =
+                      Provider.of<AuthService>(context, listen: false);
                   await authService.logout();
-                  
+
                   if (context.mounted) {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
@@ -452,7 +486,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 60),
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 20, bottom: 60),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -571,7 +606,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => const MahasiswaSearchScreen(),
+                              builder: (context) =>
+                                  const MahasiswaSearchScreen(),
                             ),
                           );
                         },

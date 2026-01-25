@@ -1,0 +1,15 @@
+{
+  "version": "1.0.2",
+  "versionCode": 3,
+  "releaseDate": "2026-01-25",
+  "updateRequired": false,
+  "updateTitle": "Update Tersedia",
+  "updateMessage": "Versi baru aplikasi LMS Unindra telah tersedia dengan perbaikan dan fitur baru.",
+  "downloadUrl": "https://github.com/TobyG74/LMSUnindraMobile/releases/latest",
+  "changelog": [
+    "Tambahan fitur pengingat deadline tugas",
+    "Perbaikan tampilan forum diskusi",
+    "Penambahan fitur update checker",
+    "Peningkatan performa aplikasi"
+  ]
+}
