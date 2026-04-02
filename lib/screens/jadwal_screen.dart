@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:provider/provider.dart';
 import '../models/jadwal_model.dart';
+import '../models/user_role_model.dart';
 import '../services/api_service.dart';
-import 'pertemuan_list_screen.dart';
+import '../services/auth_service.dart';
+import '../services/notification_service.dart';
+import 'dosen/pertemuan_dosen_list_screen.dart';
+import 'mahasiswa/pertemuan_list_mahasiswa_screen.dart';
 
 class JadwalScreen extends StatefulWidget {
   const JadwalScreen({super.key});
@@ -13,6 +18,7 @@ class JadwalScreen extends StatefulWidget {
 
 class _JadwalScreenState extends State<JadwalScreen> {
   final ApiService _apiService = ApiService();
+  final NotificationService _notificationService = NotificationService();
   List<JadwalItem> _jadwalList = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -23,6 +29,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Etika Profesi': Icons.gavel,
     'Sistem Basis Pengetahuan': Icons.storage,
     'Sistem Berbasis Pengetahuan': Icons.storage,
+    'Sistem Basis Data': Icons.storage,
+    'Praktikum Sistem Basis Data': Icons.data_object,
     'Filsafat Ilmu': Icons.school,
     'E-Commerce': Icons.shopping_cart,
     'Komputer Grafik': Icons.brush,
@@ -126,6 +134,16 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Metode Penelitian Kualitatif': Icons.science,
     'Praktik Laboratorium BK Kelompok': Icons.biotech,
     'Teknologi Informasi dalam BK': Icons.computer,
+    'Evaluasi Pembelajaran': Icons.assessment,
+    'Konseling Kesehatan': Icons.medical_services,
+    'Konseling Lintas Budaya': Icons.public,
+    'Layanan BK di Pendidikan Dasar': Icons.school,
+    'Diagnostik Kesulitan Belajar & Remedial': Icons.healing,
+    'Metode Penelitian Kuantitatif': Icons.data_exploration,
+    'Praktik Laboratorium Konseling Perorangan': Icons.person_search,
+    'Studi Kasus dalam BK': Icons.cases,
+    'English for Guidance': Icons.translate,
+    'Layanan BK di Pendidikan Menengah dan Tinggi': Icons.account_balance,
     'Desain Elementer Dwimatra': Icons.grid_4x4,
     'Pengantar Ilmu Komunikasi': Icons.campaign,
     'Bahasa Inggris Desain': Icons.language,
@@ -161,6 +179,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Etika Profesi': Colors.orange,
     'Sistem Basis Pengetahuan': Colors.purple,
     'Sistem Berbasis Pengetahuan': Colors.purple,
+    'Sistem Basis Data': Colors.purple,
+    'Praktikum Sistem Basis Data': Colors.deepPurple,
     'Filsafat Ilmu': Colors.teal,
     'E-Commerce': Colors.pink,
     'Komputer Grafik': Colors.indigo,
@@ -263,7 +283,16 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Metode Penelitian Kualitatif': Colors.blueGrey,
     'Praktik Laboratorium BK Kelompok': Colors.lightBlue,
     'Teknologi Informasi dalam BK': Colors.indigo,
-    'Desain Elementer Dwimatra': Colors.purple,
+    'Evaluasi Pembelajaran': Colors.purple,
+    'Konseling Kesehatan': Colors.red,
+    'Konseling Lintas Budaya': Colors.brown,
+    'Layanan BK di Pendidikan Dasar': Colors.blue,
+    'Diagnostik Kesulitan Belajar & Remedial': Colors.orange,
+    'Metode Penelitian Kuantitatif': Colors.teal,
+    'Praktik Laboratorium Konseling Perorangan': Colors.deepPurple,
+    'Studi Kasus dalam BK': Colors.cyan,
+    'English for Guidance': Colors.lightBlue,
+    'Layanan BK di Pendidikan Menengah dan Tinggi': Colors.indigo,    'Desain Elementer Dwimatra': Colors.purple,
     'Pengantar Ilmu Komunikasi': Colors.orange,
     'Bahasa Inggris Desain': Colors.lightBlue,
     'Pengantar Budaya Nusantara': Colors.brown,
@@ -307,7 +336,9 @@ class _JadwalScreenState extends State<JadwalScreen> {
     try {
       final html = await _apiService.fetchDashboardPage();
       final items = _parseJadwalHtml(html);
-      
+
+      await _notificationService.scheduleTodayClassReminders(items);
+
       setState(() {
         _jadwalList = items;
         _isLoading = false;
@@ -324,7 +355,7 @@ class _JadwalScreenState extends State<JadwalScreen> {
     if (_iconMap.containsKey(mataKuliah)) {
       return _iconMap[mataKuliah]!;
     }
-    
+
     final mataKuliahLower = mataKuliah.toLowerCase();
     for (var entry in _iconMap.entries) {
       if (entry.key.toLowerCase().contains(mataKuliahLower) ||
@@ -332,15 +363,15 @@ class _JadwalScreenState extends State<JadwalScreen> {
         return entry.value;
       }
     }
-    
-    return Icons.book; 
+
+    return Icons.book;
   }
 
   Color _getColorForMataKuliah(String mataKuliah) {
     if (_colorMap.containsKey(mataKuliah)) {
       return _colorMap[mataKuliah]!;
     }
-    
+
     final mataKuliahLower = mataKuliah.toLowerCase();
     for (var entry in _colorMap.entries) {
       if (entry.key.toLowerCase().contains(mataKuliahLower) ||
@@ -348,15 +379,16 @@ class _JadwalScreenState extends State<JadwalScreen> {
         return entry.value;
       }
     }
-    
-    return Colors.blue; 
+
+    return Colors.blue;
   }
 
   List<JadwalItem> _parseJadwalHtml(String html) {
     final document = html_parser.parse(html);
     final List<JadwalItem> items = [];
 
-    final cards = document.querySelectorAll('.box.box-widget.widget-user-2.card');
+    final cards =
+        document.querySelectorAll('.box.box-widget.widget-user-2.card');
 
     for (var card in cards) {
       try {
@@ -366,28 +398,29 @@ class _JadwalScreenState extends State<JadwalScreen> {
         final href = pertemuanLink.attributes['href'] ?? '';
         final match = RegExp(r'pertemuan/plist/([^"]+)').firstMatch(href);
         if (match == null) continue;
-        
+
         final encryptedKelasId = match.group(1) ?? '';
 
         final headerBadeg = card.querySelector('.header_badeg');
         if (headerBadeg == null) continue;
 
         final headerText = headerBadeg.text.trim();
-        
+
         String kode = '';
         String mataKuliah = '';
         String singkatan = '';
-        
+
         if (headerText.contains(' -')) {
           final parts = headerText.split(' -');
           kode = parts[0].trim();
-          
+
           mataKuliah = parts[1]
               .replaceAll(RegExp(r'^[\*\+\#\s]+'), '')
               .replaceAll(RegExp(r'\s*[\*\#\)]+\s*$'), '')
               .trim();
-          
-          final singkatanMatch = RegExp(r'\*\)\s*([^\)]+)\)').firstMatch(parts[1]);
+
+          final singkatanMatch =
+              RegExp(r'\*\)\s*([^\)]+)\)').firstMatch(parts[1]);
           if (singkatanMatch != null) {
             singkatan = singkatanMatch.group(1)?.trim() ?? '';
           }
@@ -397,12 +430,12 @@ class _JadwalScreenState extends State<JadwalScreen> {
         if (scheduleLabel == null) continue;
 
         final scheduleText = scheduleLabel.text.trim();
-        
+
         String kelas = '';
         String ruang = '';
         String hari = '';
         String waktu = '';
-        
+
         final scheduleParts = scheduleText.split('|');
         for (var part in scheduleParts) {
           part = part.trim();
@@ -466,7 +499,15 @@ class _JadwalScreenState extends State<JadwalScreen> {
 
   String _getCurrentDay() {
     final now = DateTime.now();
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jum\'at', 'Sabtu'];
+    const days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jum\'at',
+      'Sabtu'
+    ];
     return days[now.weekday % 7];
   }
 
@@ -488,7 +529,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
               title: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 18, color: Colors.white),
+                  Icon(Icons.calendar_today_rounded,
+                      size: 18, color: Colors.white),
                   SizedBox(width: 6),
                   Text(
                     'Jadwal Kuliah',
@@ -578,7 +620,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 40),
                               child: Text(
                                 _errorMessage!,
                                 textAlign: TextAlign.center,
@@ -700,7 +743,9 @@ class _JadwalScreenState extends State<JadwalScreen> {
                     ],
                   ),
                 ),
-                ...jadwalHari.map((jadwal) => _buildJadwalCard(jadwal)).toList(),
+                ...jadwalHari
+                    .map((jadwal) => _buildJadwalCard(jadwal))
+                    .toList(),
               ],
             );
           },
@@ -720,15 +765,25 @@ class _JadwalScreenState extends State<JadwalScreen> {
         shadowColor: Colors.black.withOpacity(0.1),
         child: InkWell(
           onTap: () {
+            final authService =
+                Provider.of<AuthService>(context, listen: false);
+            final currentRole = authService.currentUserRole;
+
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PertemuanListScreen(
-                  encryptedKelasId: jadwal.encryptedKelasId,
-                  namaMataKuliah: jadwal.mataKuliah,
-                  hari: jadwal.hari,
-                  waktu: jadwal.waktu,
-                ),
+                builder: (context) {
+                  if (currentRole == UserRole.dosen) {
+                    return PertemuanDosenListScreen(jadwal: jadwal);
+                  }
+
+                  return PertemuanListMahasiswaScreen(
+                    encryptedKelasId: jadwal.encryptedKelasId,
+                    namaMataKuliah: jadwal.mataKuliah,
+                    hari: jadwal.hari,
+                    waktu: jadwal.waktu,
+                  );
+                },
               ),
             );
           },

@@ -23,6 +23,8 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
     'Etika Profesi': Icons.gavel,
     'Sistem Basis Pengetahuan': Icons.storage,
     'Sistem Berbasis Pengetahuan': Icons.storage,
+    'Sistem Basis Data': Icons.storage,
+    'Praktikum Sistem Basis Data': Icons.data_object,
     'Filsafat Ilmu': Icons.school,
     'E-Commerce': Icons.shopping_cart,
     'Komputer Grafik': Icons.brush,
@@ -171,6 +173,8 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
     'Etika Profesi': Colors.orange,
     'Sistem Basis Pengetahuan': Colors.purple,
     'Sistem Berbasis Pengetahuan': Colors.purple,
+    'Sistem Basis Data': Colors.purple,
+    'Praktikum Sistem Basis Data': Colors.deepPurple,
     'Filsafat Ilmu': Colors.teal,
     'E-Commerce': Colors.pink,
     'Komputer Grafik': Colors.indigo,
@@ -318,35 +322,49 @@ class _MataKuliahScreenState extends State<MataKuliahScreen> {
   }
 
   IconData _getIconForMataKuliah(String nama) {
-    if (_iconMap.containsKey(nama)) {
-      return _iconMap[nama]!;
+    final normalizedNama = _normalizeNamaMapKey(nama);
+
+    if (_iconMap.containsKey(normalizedNama)) {
+      return _iconMap[normalizedNama]!;
     }
-    
-    final namaLower = nama.toLowerCase();
-    for (var entry in _iconMap.entries) {
-      if (entry.key.toLowerCase().contains(namaLower) ||
-          namaLower.contains(entry.key.toLowerCase())) {
+
+    for (final entry in _iconMap.entries) {
+      final normalizedKey = _normalizeNamaMapKey(entry.key);
+      if (normalizedKey == normalizedNama ||
+          normalizedKey.contains(normalizedNama) ||
+          normalizedNama.contains(normalizedKey)) {
         return entry.value;
       }
     }
-    
+
     return Icons.book;
   }
 
   Color _getColorForMataKuliah(String nama) {
-    if (_colorMap.containsKey(nama)) {
-      return _colorMap[nama]!;
+    final normalizedNama = _normalizeNamaMapKey(nama);
+
+    if (_colorMap.containsKey(normalizedNama)) {
+      return _colorMap[normalizedNama]!;
     }
-    
-    final namaLower = nama.toLowerCase();
-    for (var entry in _colorMap.entries) {
-      if (entry.key.toLowerCase().contains(namaLower) ||
-          namaLower.contains(entry.key.toLowerCase())) {
+
+    for (final entry in _colorMap.entries) {
+      final normalizedKey = _normalizeNamaMapKey(entry.key);
+      if (normalizedKey == normalizedNama ||
+          normalizedKey.contains(normalizedNama) ||
+          normalizedNama.contains(normalizedKey)) {
         return entry.value;
       }
     }
-    
+
     return Colors.blue;
+  }
+
+  String _normalizeNamaMapKey(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   Future<void> _loadMataKuliah() async {

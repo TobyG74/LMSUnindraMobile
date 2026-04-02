@@ -3,13 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../models/user_role_model.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
 import '../widgets/update_dialog.dart';
-import 'login_screen.dart';
+import 'login_role_selector_screen.dart';
 import 'jadwal_screen.dart';
-import 'presensi_screen.dart';
+import 'dosen/presensi_dosen_screen.dart';
+import 'dosen/nilai_dosen_screen.dart';
+import 'dosen/laporan_dosen_screen.dart';
+import 'mahasiswa/presensi_mahasiswa_screen.dart';
 import 'profile_screen.dart';
 import 'matakuliah_screen.dart';
 import 'mahasiswa_search_screen.dart';
@@ -27,12 +31,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _userName;
   String? _userPhotoUrl;
   bool _isLoadingUserData = true;
+  bool _animateCards = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _checkForUpdates();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _animateCards = true;
+        });
+      }
+    });
   }
 
   Future<void> _checkForUpdates() async {
@@ -82,21 +94,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showAboutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor =
+        isDark ? const Color(0xFF1A2436) : const Color(0xFFF8FAFD);
+    final borderColor =
+        isDark ? const Color(0xFF2A3853) : const Color(0xFFE0E8F3);
+    final subtitleColor =
+        isDark ? const Color(0xFFB9C6DA) : const Color(0xFF5A6B85);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.shade100,
+                color: const Color(0xFFFFE7CC),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.info_outline, color: Colors.orange.shade700),
+              child: const Icon(Icons.info_outline, color: Color(0xFFD97706)),
             ),
             const SizedBox(width: 12),
-            const Text('Tentang Aplikasi'),
+            const Expanded(
+              child: Text(
+                'Tentang Aplikasi',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -107,14 +133,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
+                  color: const Color(0xFFFFF4E8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFF3D1A7)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: Colors.orange.shade700),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFD97706),
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -134,76 +162,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
-              const Text(
-                'Dibuat oleh:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Tobi Saputra',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildLinkButton(
-                    context,
-                    icon: FontAwesomeIcons.github,
-                    label: 'GitHub',
-                    url: 'https://github.com/TobyG74',
-                  ),
-                  const SizedBox(width: 8),
-                  _buildLinkButton(
-                    context,
-                    icon: FontAwesomeIcons.instagram,
-                    label: 'Instagram',
-                    url: 'https://instagram.com/ini.tobz',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
-              const Text(
-                'Terima kasih kepada:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.bug_report,
-                      size: 16, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Tester',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 24),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '• Rahmad Supandi',
-                      style: TextStyle(fontSize: 14),
+                      'Dibuat oleh',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
+                    const Text('Tobi Saputra', style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.github,
+                          label: 'GitHub',
+                          url: 'https://github.com/TobyG74',
+                        ),
+                        const SizedBox(width: 8),
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.instagram,
+                          label: 'Instagram',
+                          url: 'https://instagram.com/ini.tobz',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Terima kasih kepada',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildAboutItem(
+                      icon: Icons.bug_report_rounded,
+                      title: 'Tester',
+                      titleColor: subtitleColor,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text('• Rahmad Supandi',
+                        style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 6),
                     _buildLinkButton(
                       context,
                       icon: FontAwesomeIcons.instagram,
@@ -214,30 +232,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.code, size: 16, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Kontributor Fitur',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 24),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildAboutItem(
+                      icon: Icons.code_rounded,
+                      title: 'Kontributor Fitur',
+                      titleColor: subtitleColor,
+                    ),
+                    const SizedBox(height: 8),
                     const Text(
                       '• Ahmad Dandi Subhani',
                       style: TextStyle(fontSize: 14),
@@ -245,12 +252,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Fitur Cari Dosen (Data & API)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: subtitleColor),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         _buildLinkButton(
@@ -286,6 +290,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  static Widget _buildAboutCard({
+    required Widget child,
+    required Color color,
+    required Color borderColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: child,
+    );
+  }
+
+  static Widget _buildAboutItem({
+    required IconData icon,
+    required String title,
+    required Color titleColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: titleColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: titleColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   static Widget _buildLinkButton(
     BuildContext context, {
     required IconData icon,
@@ -313,150 +357,269 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       },
       borderRadius: BorderRadius.circular(8),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.blue.shade200),
         ),
-        child: Icon(icon, color: Colors.blue.shade700, size: compact ? 20 : 24),
+        child: Tooltip(
+          message: label,
+          child:
+              Icon(icon, color: Colors.blue.shade700, size: compact ? 18 : 22),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final role = context.watch<AuthService>().currentUserRole;
+    final isDosen = role == UserRole.dosen;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        isDark ? const Color(0xFF0E1320) : const Color(0xFFF2F6FC);
+    final sectionTitleColor =
+        isDark ? const Color(0xFFE6EEF8) : const Color(0xFF0A2A57);
+
+    final now = DateTime.now();
+    final weekDays = [
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu',
+    ];
+    final months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    final formattedDate =
+        '${weekDays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 160,
+            expandedHeight: 250,
             floating: false,
             pinned: true,
-            backgroundColor: const Color(0xFF073163),
+            automaticallyImplyLeading: false,
+            backgroundColor: const Color(0xFF0A2A57),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF073163), Color(0xFF1756a5)],
+                    colors: [
+                      const Color(0xFF0A2A57),
+                      const Color(0xFF0F4A96),
+                      Colors.lightBlue.shade600,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: _isLoadingUserData
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-                          child: Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.white, width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: _userPhotoUrl != null &&
-                                        _userPhotoUrl!.isNotEmpty &&
-                                        _userPhotoUrl!.startsWith('http')
-                                    ? CircleAvatar(
-                                        radius: 40,
-                                        backgroundColor: Colors.white,
-                                        child: ClipOval(
-                                          child: Image.network(
-                                            _userPhotoUrl!,
-                                            width: 80,
-                                            height: 80,
-                                            fit: BoxFit.cover,
-                                            loadingBuilder: (context, child,
-                                                loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return const Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                              Color>(
-                                                          Color(0xFF073163)),
-                                                ),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              return const Icon(
-                                                Icons.person,
-                                                size: 45,
-                                                color: Color(0xFF073163),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      )
-                                    : const CircleAvatar(
-                                        radius: 40,
-                                        backgroundColor: Colors.white,
-                                        child: Icon(
-                                          Icons.person,
-                                          size: 45,
-                                          color: Color(0xFF073163),
-                                        ),
-                                      ),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Halo! 👋',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (_userName != null)
-                                      Text(
-                                        _userName!,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      )
-                                    else
-                                      const Text(
-                                        'Mahasiswa',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: -80,
+                      right: -50,
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.14),
                         ),
                       ),
+                    ),
+                    Positioned(
+                      bottom: -90,
+                      left: -70,
+                      child: Container(
+                        width: 260,
+                        height: 260,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.10),
+                        ),
+                      ),
+                    ),
+                    _isLoadingUserData
+                        ? const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
+                          )
+                        : SafeArea(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 62, 20, 18),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: Colors.white, width: 2.5),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.2),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: _userPhotoUrl != null &&
+                                                _userPhotoUrl!.isNotEmpty &&
+                                                _userPhotoUrl!
+                                                    .startsWith('http')
+                                            ? CircleAvatar(
+                                                radius: 32,
+                                                backgroundColor: Colors.white,
+                                                child: ClipOval(
+                                                  child: Image.network(
+                                                    _userPhotoUrl!,
+                                                    width: 64,
+                                                    height: 64,
+                                                    fit: BoxFit.cover,
+                                                    loadingBuilder: (context,
+                                                        child,
+                                                        loadingProgress) {
+                                                      if (loadingProgress ==
+                                                          null) {
+                                                        return child;
+                                                      }
+                                                      return const Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                      Color>(
+                                                                  Color(
+                                                                      0xFF0A2A57)),
+                                                        ),
+                                                      );
+                                                    },
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return const Icon(
+                                                        Icons.person,
+                                                        size: 38,
+                                                        color:
+                                                            Color(0xFF0A2A57),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              )
+                                            : const CircleAvatar(
+                                                radius: 32,
+                                                backgroundColor: Colors.white,
+                                                child: Icon(
+                                                  Icons.person,
+                                                  size: 36,
+                                                  color: Color(0xFF0A2A57),
+                                                ),
+                                              ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Selamat datang kembali',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                letterSpacing: 0.2,
+                                                color: Colors.white
+                                                    .withOpacity(0.92),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              (_userName?.isNotEmpty ?? false)
+                                                  ? _userName!
+                                                  : (isDosen
+                                                      ? 'Dosen'
+                                                      : 'Mahasiswa'),
+                                              style: const TextStyle(
+                                                fontSize: 21,
+                                                fontWeight: FontWeight.w800,
+                                                color: Colors.white,
+                                                height: 1.1,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.16),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.25),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 18,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            formattedDate,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -475,7 +638,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (context.mounted) {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder: (context) => const LoginRoleSelectorScreen(),
                       ),
                     );
                   }
@@ -486,151 +649,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.only(
-                  left: 20, right: 20, top: 20, bottom: 60),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 70),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Container(
                         width: 4,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF073163),
+                          color: sectionTitleColor,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Menu Utama',
+                      Text(
+                        'Akses Cepat',
                         style: TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF073163),
+                          fontWeight: FontWeight.w800,
+                          color: sectionTitleColor,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.1,
-                    children: [
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.book_rounded,
-                        title: 'Mata Kuliah',
-                        subtitle: 'Lihat semua',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const MataKuliahScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.calendar_month_rounded,
-                        title: 'Jadwal',
-                        subtitle: 'Jadwal kuliah',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF009688), Color(0xFF00796B)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const JadwalScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.how_to_reg_rounded,
-                        title: 'Presensi',
-                        subtitle: 'Riwayat hadir',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFA726), Color(0xFFF57C00)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const PresensiScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.person_rounded,
-                        title: 'Profil',
-                        subtitle: 'Data diri',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5E35B1), Color(0xFF4527A0)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.search_rounded,
-                        title: 'Cari Mhs',
-                        subtitle: 'Database PDDIKTI',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const MahasiswaSearchScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildModernMenuCard(
-                        context,
-                        icon: Icons.person_search_rounded,
-                        title: 'Cari Dosen',
-                        subtitle: 'SIMPEG UNINDRA',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const DosenSearchScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.45,
+                    children: isDosen
+                        ? _buildDosenMenuCards(context)
+                        : _buildMahasiswaMenuCards(context),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -642,75 +697,386 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildModernMenuCard(
+  Widget _buildMenuCard(
     BuildContext context, {
+    required int index,
     required IconData icon,
     required String title,
     required String subtitle,
     required Gradient gradient,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.colors.first.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+    final duration = Duration(milliseconds: 380 + (index * 80));
+    final accentColor = gradient.colors.first;
+    final cardBackground = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF152035)
+        : Colors.white;
+
+    return AnimatedSlide(
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      offset: _animateCards ? Offset.zero : const Offset(0, 0.12),
+      child: AnimatedOpacity(
+        duration: duration,
+        curve: Curves.easeOut,
+        opacity: _animateCards ? 1 : 0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: cardBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: accentColor.withOpacity(0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 32,
-                    color: Colors.white,
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 18,
+                        color: accentColor,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: Colors.grey[400],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMahasiswaMenuCards(BuildContext context) {
+    return [
+      _buildMenuCard(
+        context,
+        index: 0,
+        icon: Icons.book_rounded,
+        title: 'Mata Kuliah',
+        subtitle: 'Lihat daftar kelas',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const MataKuliahScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 1,
+        icon: Icons.calendar_month_rounded,
+        title: 'Jadwal',
+        subtitle: 'Agenda perkuliahan',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF009688), Color(0xFF00796B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const JadwalScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 2,
+        icon: Icons.how_to_reg_rounded,
+        title: 'Presensi',
+        subtitle: 'Cek kehadiran',
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFA726), Color(0xFFF57C00)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const PresensiMahasiswaScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 3,
+        icon: Icons.person_rounded,
+        title: 'Profil',
+        subtitle: 'Informasi akun',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF455A64), Color(0xFF263238)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 4,
+        icon: Icons.search_rounded,
+        title: 'Cari Mhs',
+        subtitle: 'Database PDDIKTI',
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const MahasiswaSearchScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 5,
+        icon: Icons.person_search_rounded,
+        title: 'Cari Dosen',
+        subtitle: 'SIMPEG UNINDRA',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const DosenSearchScreen(),
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildDosenMenuCards(BuildContext context) {
+    return [
+      _buildMenuCard(
+        context,
+        index: 0,
+        icon: Icons.book_rounded,
+        title: 'Mata Kuliah',
+        subtitle: 'Daftar kelas ajar',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const MataKuliahScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 1,
+        icon: Icons.grading_rounded,
+        title: 'Nilai',
+        subtitle: 'Penilaian per kelas',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5E35B1), Color(0xFF4527A0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const NilaiDosenScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 2,
+        icon: Icons.how_to_reg_rounded,
+        title: 'Presensi',
+        subtitle: 'Input kehadiran kelas',
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFA726), Color(0xFFF57C00)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const PresensiDosenScreen(
+                headerTitle: 'Presensi Dosen',
+                headerIcon: Icons.how_to_reg_rounded,
+              ),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 3,
+        icon: Icons.fact_check_rounded,
+        title: 'Laporan Kuliah',
+        subtitle: 'Realisasi pertemuan',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8E24AA), Color(0xFF6A1B9A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const LaporanDosenScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 4,
+        icon: Icons.calendar_month_rounded,
+        title: 'Jadwal',
+        subtitle: 'Agenda mengajar',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF009688), Color(0xFF00796B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const JadwalScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 5,
+        icon: Icons.person_rounded,
+        title: 'Profil',
+        subtitle: 'Informasi akun',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF455A64), Color(0xFF263238)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 6,
+        icon: Icons.search_rounded,
+        title: 'Cari Mhs',
+        subtitle: 'Database PDDIKTI',
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const MahasiswaSearchScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        context,
+        index: 7,
+        icon: Icons.person_search_rounded,
+        title: 'Cari Dosen',
+        subtitle: 'SIMPEG UNINDRA',
+        gradient: const LinearGradient(
+          colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const DosenSearchScreen(),
+            ),
+          );
+        },
+      ),
+    ];
   }
 }

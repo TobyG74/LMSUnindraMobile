@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:flutter/gestures.dart';
 
 class ForumScreen extends StatefulWidget {
   final String encryptedUrl;
@@ -88,16 +87,6 @@ class _ForumScreenState extends State<ForumScreen> {
     setState(() => _isSending = true);
 
     try {
-      final formattedMessage = _convertWhatsAppFormatToHtml(_messageController.text.trim());
-      final result = await _apiService.submitForumReply(
-        parentId: _replyingTo!['parent_id'] ?? '0',
-        kdJdwEnc: _replyingTo!['kd_jdw_enc'] ?? '',
-        idAktifitas: _replyingTo!['id_aktifitas'] ?? '',
-        replyId: _replyingTo!['reply_id'] ?? '',
-        forumNama: _replyingTo!['forum_nama'] ?? '',
-        message: formattedMessage,
-      );
-      
       if (mounted) {
         _showSnackBar('Pesan berhasil dikirim');
         _messageController.clear();
@@ -139,27 +128,6 @@ class _ForumScreenState extends State<ForumScreen> {
     );
   }
 
-  String _convertWhatsAppFormatToHtml(String text) {
-    // Bold: *text* to <strong>text</strong>
-    text = text.replaceAllMapped(
-      RegExp(r'\*([^\*]+)\*'),
-      (match) => '<strong>${match.group(1)}</strong>',
-    );
-    
-    // Italic: _text_ to <em>text</em>
-    text = text.replaceAllMapped(
-      RegExp(r'_([^_]+)_'),
-      (match) => '<em>${match.group(1)}</em>',
-    );
-    
-    // Strikethrough: ~text~ to <s>text</s>
-    text = text.replaceAllMapped(
-      RegExp(r'~([^~]+)~'),
-      (match) => '<s>${match.group(1)}</s>',
-    );
-    
-    return '<p>$text</p>';
-  }
 
   Widget _buildFormattedText(String htmlText) {
     if (htmlText.isEmpty) {
