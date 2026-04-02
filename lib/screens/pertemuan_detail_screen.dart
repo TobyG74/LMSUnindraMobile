@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
 import '../models/pertemuan_model.dart';
+import 'dosen/tambah_lesson_form_screen.dart';
 import 'assignment_screen.dart';
 import 'forum_screen.dart';
 
@@ -18,6 +19,7 @@ class PertemuanDetailScreen extends StatefulWidget {
   final String? kodeMataKuliah;
   final String? mataKuliah;
   final int? pertemuanKe;
+  final bool isDosenView;
 
   const PertemuanDetailScreen({
     super.key,
@@ -28,6 +30,7 @@ class PertemuanDetailScreen extends StatefulWidget {
     this.kodeMataKuliah,
     this.mataKuliah,
     this.pertemuanKe,
+    this.isDosenView = false,
   });
 
   @override
@@ -37,6 +40,9 @@ class PertemuanDetailScreen extends StatefulWidget {
 class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
+  bool _isDosenPage = false;
+  bool _isProcessingDelete = false;
+  String? _lessonKode;
   List<MateriItem> _materiList = [];
 
   @override
@@ -69,6 +75,12 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     final document = html_parser.parse(html);
     final List<MateriItem> items = [];
 
+    _isDosenPage = widget.isDosenView ||
+        html.contains('function tambah_lesson()') ||
+        html.contains('user_level = "dosen"') ||
+        html.contains('onclick="tambah_lesson()"');
+    _lessonKode = _extractLessonKode(html);
+
     final boxBody = document.querySelector('div.box-body');
     if (boxBody != null) {
       final tableInBox = boxBody.querySelector('table');
@@ -90,6 +102,32 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     setState(() {
       _materiList = items;
     });
+  }
+
+  String? _extractLessonKode(String html) {
+    final match = RegExp(
+      r"function\s+tambah_lesson\(\)\s*\{[\s\S]*?var\s+kode\s*=\s*'([^']+)'",
+      multiLine: true,
+    ).firstMatch(html);
+    final kode = match?.group(1)?.trim();
+    if (kode == null || kode.isEmpty) {
+      return null;
+    }
+    return kode;
+  }
+
+  String? _extractDeleteToken(dynamic row) {
+    final deleteButton = row.querySelector(
+        'button[onclick*="hapus_item"], button[onClick*="hapus_item"]');
+    if (deleteButton == null) {
+      return null;
+    }
+
+    final onClick = deleteButton.attributes['onclick'] ??
+        deleteButton.attributes['onClick'] ??
+        '';
+    final match = RegExp(r"hapus_item\('([^']+)'\)").firstMatch(onClick);
+    return match?.group(1);
   }
 
   void _parseMateriRows(List rows, List<MateriItem> items) {
@@ -114,6 +152,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
         String? downloadUrl;
         String? assignmentUrl;
         String? externalUrl;
+        final deleteToken = _extractDeleteToken(row);
         String title = '';
 
         final assignmentLinks =
@@ -457,7 +496,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
               }
             }
           }
-        } 
+        }
 
         String description = '';
         if (allDivs.length > 1) {
@@ -478,6 +517,7 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
             url: assignmentUrl ?? externalUrl,
             viewUrl: viewUrl,
             downloadUrl: downloadUrl,
+            deleteToken: deleteToken,
             date: date,
           ));
         }
@@ -1093,6 +1133,429 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
     );
   }
 
+  Future<void> _handleTambahLesson() async {
+    if (_lessonKode == null || _lessonKode!.isEmpty) {
+      _showSnackBar('Kode lesson tidak ditemukan');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Memuat opsi lesson...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final popupHtml = await _apiService.fetchTambahLessonPopup(_lessonKode!);
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (popupHtml == null || popupHtml.isEmpty) {
+        _showSnackBar('Gagal memuat opsi tambah lesson');
+        return;
+      }
+
+      final options = _parseLessonOptions(popupHtml, _lessonKode!);
+      if (options.isEmpty) {
+        _showSnackBar('Opsi lesson tidak ditemukan');
+        return;
+      }
+
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (context) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tambah Materi dan Aktifitas',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 360,
+                    child: GridView.builder(
+                      itemCount: options.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.2,
+                      ),
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _openLessonUrl(option.url);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(option.icon,
+                                      size: 30, color: option.color),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    option.label,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _showSnackBar('Error: $e');
+      }
+    }
+  }
+
+  List<_LessonOption> _parseLessonOptions(String html, String kode) {
+    final document = html_parser.parse(html);
+    final options = <_LessonOption>[];
+
+    final buttons = document.querySelectorAll('button[onclick*="go_lesson"]');
+    for (final button in buttons) {
+      final onClick = button.attributes['onclick'] ?? '';
+      final match = RegExp(r"go_lesson\('([^']+)'\)").firstMatch(onClick);
+      final jenis = match?.group(1);
+      if (jenis == null || jenis.isEmpty) continue;
+
+      final label = button.querySelector('p')?.text.trim();
+      final iconClass = button.querySelector('i')?.className ?? '';
+      final url = '${ApiService.baseUrl}/$jenis/$kode';
+      options.add(
+        _LessonOption(
+          label: (label == null || label.isEmpty) ? 'Lesson' : label,
+          url: url,
+          icon: _iconFromClass(iconClass),
+          color: _colorFromClass(iconClass),
+        ),
+      );
+    }
+
+    return options;
+  }
+
+  IconData _iconFromClass(String className) {
+    final lower = className.toLowerCase();
+    if (lower.contains('youtube')) return Icons.play_circle;
+    if (lower.contains('video')) return Icons.video_call;
+    if (lower.contains('comment')) return Icons.forum;
+    if (lower.contains('globe')) return Icons.link;
+    if (lower.contains('audio')) return Icons.audio_file;
+    if (lower.contains('html5')) return Icons.html;
+    if (lower.contains('file-signature')) return Icons.quiz;
+    if (lower.contains('suitcase')) return Icons.assignment;
+    if (lower.contains('file-pdf') || lower.contains('file')) {
+      return Icons.upload_file;
+    }
+    return Icons.add_box;
+  }
+
+  Color _colorFromClass(String className) {
+    final lower = className.toLowerCase();
+    if (lower.contains('red')) return Colors.red;
+    if (lower.contains('green')) return Colors.green;
+    if (lower.contains('blue')) return Colors.blue;
+    if (lower.contains('yellow')) return Colors.orange;
+    if (lower.contains('aqua')) return Colors.teal;
+    return const Color(0xFF073163);
+  }
+
+  Future<void> _openLessonUrl(String url) async {
+    if (url.contains('/member_file/upload/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.uploadFile, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_audio/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.audio, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_video/tambah_ytb/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.youtube,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_video/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.video, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_forum/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.forum, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_chat/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.chat, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_quiz/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TambahLessonFormScreen(type: LessonFormType.quiz, url: url),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_page/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.htmlPage,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_url/tambah_zoom/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.zoomMeeting,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_url/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.urlEksternal,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_peer_evaluation/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.peerAssessment,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_tugas/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.tugasAssignment,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_tugas_kolaborasi/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.tugasKolaborasi,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_draw/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.autodraw,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (url.contains('/member_canva/tambah/')) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TambahLessonFormScreen(
+            type: LessonFormType.canva,
+            url: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    _showSnackBar('Tidak dapat membuka halaman lesson');
+  }
+
+  Future<void> _confirmDeleteMateri(MateriItem item) async {
+    if (item.deleteToken == null || item.deleteToken!.isEmpty) {
+      _showSnackBar('Token hapus tidak ditemukan');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Hapus Materi'),
+          content: Text('Yakin hapus "${item.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Hapus',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isProcessingDelete = true;
+    });
+
+    try {
+      final ok = await _apiService.hapusItemPertemuan(item.deleteToken!);
+      if (!mounted) return;
+
+      if (ok) {
+        _showSnackBar('Materi berhasil dihapus');
+        await _loadPertemuanDetail();
+      } else {
+        _showSnackBar('Gagal menghapus materi');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingDelete = false;
+        });
+      }
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -1251,151 +1714,197 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
                         ),
                       ),
                     )
-                  : SliverPadding(
-                      padding: const EdgeInsets.only(
-                          left: 16, right: 16, top: 16, bottom: 60),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final item = _materiList[index];
-                            return Card(
-                              elevation: 2,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  if (item.type == 'assignment') {
-                                    _handleAssignmentAction(item);
-                                  } else if (item.type == 'url') {
-                                    _handleUrlAction(item);
-                                  } else if (item.type == 'forum') {
-                                    _handleForumAction(item);
-                                  } else if (item.type == 'gmeet') {
-                                    _handleGoogleMeetAction(item);
-                                  } else if (item.type == 'youtube') {
-                                    _handleYouTubeAction(item);
-                                  } else if (item.downloadUrl != null) {
-                                    _handleFileAction(item);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: _getIconColor(item.type)
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              _getIconData(item.icon),
-                                              color: _getIconColor(item.type),
-                                              size: 28,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  item.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                if (item.date.isNotEmpty) ...[
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    item.date,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                  : SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            left: 16, right: 16, top: 16, bottom: 60),
+                        child: Column(
+                          children: [
+                            if (_isDosenPage) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: _handleTambahLesson,
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Tambah Lesson'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF1E8E3E),
+                                        foregroundColor: Colors.white,
                                       ),
-                                      if (item.description.isNotEmpty) ...[
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          item.description,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade700,
-                                            height: 1.4,
-                                          ),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                      if (item.downloadUrl != null &&
-                                          (item.type == 'pdf' ||
-                                              item.type == 'word' ||
-                                              item.type == 'powerpoint' ||
-                                              item.type == 'excel' ||
-                                              item.type == 'image' ||
-                                              item.type == 'archive' ||
-                                              item.type == 'file')) ...[
-                                        const SizedBox(height: 12),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  IconButton.filledTonal(
+                                    onPressed: _loadPertemuanDetail,
+                                    icon: const Icon(Icons.refresh),
+                                    tooltip: 'Refresh',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            for (final item in _materiList)
+                              Card(
+                                elevation: 2,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: InkWell(
+                                  onTap: () {
+                                    if (item.type == 'assignment') {
+                                      _handleAssignmentAction(item);
+                                    } else if (item.type == 'url') {
+                                      _handleUrlAction(item);
+                                    } else if (item.type == 'forum') {
+                                      _handleForumAction(item);
+                                    } else if (item.type == 'gmeet') {
+                                      _handleGoogleMeetAction(item);
+                                    } else if (item.type == 'youtube') {
+                                      _handleYouTubeAction(item);
+                                    } else if (item.downloadUrl != null) {
+                                      _handleFileAction(item);
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Row(
                                           children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: _getIconColor(item.type)
+                                                    .withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                _getIconData(item.icon),
+                                                color: _getIconColor(item.type),
+                                                size: 28,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
                                             Expanded(
-                                              child: OutlinedButton.icon(
-                                                onPressed: () =>
-                                                    _handleFileAction(item),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    item.title,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  if (item.date.isNotEmpty) ...[
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      item.date,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                            if (_isDosenPage &&
+                                                item.deleteToken != null &&
+                                                item.deleteToken!.isNotEmpty)
+                                              IconButton(
+                                                onPressed: _isProcessingDelete
+                                                    ? null
+                                                    : () =>
+                                                        _confirmDeleteMateri(
+                                                            item),
+                                                tooltip: 'Hapus file',
                                                 icon: const Icon(
-                                                    Icons.visibility,
-                                                    size: 18),
-                                                label: const Text('Buka'),
-                                                style: OutlinedButton.styleFrom(
-                                                  foregroundColor:
-                                                      _getIconColor(item.type),
+                                                  Icons.delete_outline,
+                                                  color: Colors.red,
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: ElevatedButton.icon(
-                                                onPressed: () =>
-                                                    _handleFileAction(item,
-                                                        download: true),
-                                                icon: const Icon(Icons.download,
-                                                    size: 18),
-                                                label: const Text('Download'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      _getIconColor(item.type),
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                              ),
-                                            ),
                                           ],
                                         ),
+                                        if (item.description.isNotEmpty) ...[
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            item.description,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade700,
+                                              height: 1.4,
+                                            ),
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                        if (item.downloadUrl != null &&
+                                            (item.type == 'pdf' ||
+                                                item.type == 'word' ||
+                                                item.type == 'powerpoint' ||
+                                                item.type == 'excel' ||
+                                                item.type == 'image' ||
+                                                item.type == 'archive' ||
+                                                item.type == 'file')) ...[
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: OutlinedButton.icon(
+                                                  onPressed: () =>
+                                                      _handleFileAction(item),
+                                                  icon: const Icon(
+                                                      Icons.visibility,
+                                                      size: 18),
+                                                  label: const Text('Buka'),
+                                                  style:
+                                                      OutlinedButton.styleFrom(
+                                                    foregroundColor:
+                                                        _getIconColor(
+                                                            item.type),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: ElevatedButton.icon(
+                                                  onPressed: () =>
+                                                      _handleFileAction(item,
+                                                          download: true),
+                                                  icon: const Icon(
+                                                      Icons.download,
+                                                      size: 18),
+                                                  label: const Text('Download'),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        _getIconColor(
+                                                            item.type),
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                          childCount: _materiList.length,
+                          ],
                         ),
                       ),
                     ),
@@ -1403,4 +1912,18 @@ class _PertemuanDetailScreenState extends State<PertemuanDetailScreen> {
       ),
     );
   }
+}
+
+class _LessonOption {
+  final String label;
+  final String url;
+  final IconData icon;
+  final Color color;
+
+  _LessonOption({
+    required this.label,
+    required this.url,
+    required this.icon,
+    required this.color,
+  });
 }

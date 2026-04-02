@@ -29,6 +29,7 @@ class MateriItem {
   final String? url;
   final String? viewUrl;
   final String? downloadUrl;
+  final String? deleteToken;
   final String date;
 
   MateriItem({
@@ -39,6 +40,7 @@ class MateriItem {
     this.url,
     this.viewUrl,
     this.downloadUrl,
+    this.deleteToken,
     required this.date,
   });
 
@@ -51,6 +53,7 @@ class MateriItem {
       url: json['url'],
       viewUrl: json['viewUrl'],
       downloadUrl: json['downloadUrl'],
+      deleteToken: json['deleteToken'],
       date: json['date'] ?? '',
     );
   }
@@ -64,6 +67,7 @@ class MateriItem {
       'url': url,
       'viewUrl': viewUrl,
       'downloadUrl': downloadUrl,
+      'deleteToken': deleteToken,
       'date': date,
     };
   }
