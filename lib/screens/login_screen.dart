@@ -8,11 +8,14 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/captcha_service.dart';
 import '../models/login_model.dart';
+import '../models/user_role_model.dart';
 import 'dashboard_screen.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final UserRole userRole;
+
+  const LoginScreen({super.key, required this.userRole});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -23,15 +26,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _captchaController = TextEditingController();
-  
+
   final ApiService _apiService = ApiService();
   final CaptchaService _captchaService = CaptchaService();
-  
+
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isFirstLoad = true;
-  
+
   Uint8List? _captchaImageBytes;
   LoginFormData? _loginFormData;
   String? _errorMessage;
@@ -43,7 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _initializeLogin() async {
-    final savedCredentials = await _apiService.loadSavedCredentials();
+    final savedCredentials =
+        await _apiService.loadSavedCredentials(widget.userRole);
     if (savedCredentials != null) {
       setState(() {
         _usernameController.text = savedCredentials['username']!;
@@ -58,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       });
     }
-    
+
     await _loadLoginData();
   }
 
@@ -70,9 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       _loginFormData = await _apiService.fetchLoginPage();
-      
+
       await _loadCaptcha();
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -94,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _captchaImageBytes = captchaBytes;
       });
-      
+
       await _autoSolveCaptcha();
     } catch (e) {}
   }
@@ -107,12 +111,17 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _captchaController.text = result;
       });
-      
+
       // Auto-login hanya jika remember me aktif dan ada username + password
-      if (_isFirstLoad && mounted && result != '0' && _rememberMe && _usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+      if (_isFirstLoad &&
+          mounted &&
+          result != '0' &&
+          _rememberMe &&
+          _usernameController.text.isNotEmpty &&
+          _passwordController.text.isNotEmpty) {
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
-          _isFirstLoad = false; 
+          _isFirstLoad = false;
           await _handleLogin();
         }
       }
@@ -121,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_loginFormData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -143,6 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
       username: _usernameController.text,
       password: _passwordController.text,
       captcha: _captchaController.text,
+      userRole: widget.userRole,
       rememberMe: _rememberMe,
     );
 
@@ -185,21 +195,35 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showAboutDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor =
+        isDark ? const Color(0xFF1A2436) : const Color(0xFFF8FAFD);
+    final borderColor =
+        isDark ? const Color(0xFF2A3853) : const Color(0xFFE0E8F3);
+    final subtitleColor =
+        isDark ? const Color(0xFFB9C6DA) : const Color(0xFF5A6B85);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.shade100,
+                color: const Color(0xFFFFE7CC),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.info_outline, color: Colors.orange.shade700),
+              child: const Icon(Icons.info_outline, color: Color(0xFFD97706)),
             ),
             const SizedBox(width: 12),
-            const Text('Tentang Aplikasi'),
+            const Expanded(
+              child: Text(
+                'Tentang Aplikasi',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -210,13 +234,16 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
+                  color: const Color(0xFFFFF4E8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFF3D1A7)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFD97706),
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -236,75 +263,66 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
-              const Text(
-                'Dibuat oleh:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Tobi Saputra',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildLinkButton(
-                    context,
-                    icon: FontAwesomeIcons.github,
-                    label: 'GitHub',
-                    url: 'https://github.com/TobyG74',
-                  ),
-                  const SizedBox(width: 8),
-                  _buildLinkButton(
-                    context,
-                    icon: FontAwesomeIcons.instagram,
-                    label: 'Instagram',
-                    url: 'https://instagram.com/ini.tobz',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 12),
-              const Text(
-                'Terima kasih kepada:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.bug_report, size: 16, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Tester',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 24),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '• Rahmad Supandi',
-                      style: TextStyle(fontSize: 14),
+                      'Dibuat oleh',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
+                    const Text('Tobi Saputra', style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.github,
+                          label: 'GitHub',
+                          url: 'https://github.com/TobyG74',
+                        ),
+                        const SizedBox(width: 8),
+                        _buildLinkButton(
+                          context,
+                          icon: FontAwesomeIcons.instagram,
+                          label: 'Instagram',
+                          url: 'https://instagram.com/ini.tobz',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Terima kasih kepada',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildAboutItem(
+                      icon: Icons.bug_report_rounded,
+                      title: 'Tester',
+                      titleColor: subtitleColor,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text('• Rahmad Supandi',
+                        style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 6),
                     _buildLinkButton(
                       context,
                       icon: FontAwesomeIcons.instagram,
@@ -315,30 +333,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.code, size: 16, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Kontributor Fitur',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 24),
+              _buildAboutCard(
+                color: cardColor,
+                borderColor: borderColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildAboutItem(
+                      icon: Icons.code_rounded,
+                      title: 'Kontributor Fitur',
+                      titleColor: subtitleColor,
+                    ),
+                    const SizedBox(height: 8),
                     const Text(
                       '• Ahmad Dandi Subhani',
                       style: TextStyle(fontSize: 14),
@@ -346,12 +353,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Fitur Cari Dosen (Data & API)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: subtitleColor),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         _buildLinkButton(
@@ -387,6 +391,46 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildAboutCard({
+    required Widget child,
+    required Color color,
+    required Color borderColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildAboutItem({
+    required IconData icon,
+    required String title,
+    required Color titleColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: titleColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: titleColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildLinkButton(
     BuildContext context, {
     required IconData icon,
@@ -414,25 +458,36 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       borderRadius: BorderRadius.circular(8),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.blue.shade200),
         ),
-        child: Icon(icon, color: Colors.blue.shade700, size: compact ? 20 : 24),
+        child: Tooltip(
+          message: label,
+          child:
+              Icon(icon, color: Colors.blue.shade700, size: compact ? 18 : 22),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color primaryTextColor = Color(0xFF111827);
+    const Color secondaryTextColor = Color(0xFF4B5563);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: const Color(0xFF073163),
+        iconTheme: const IconThemeData(color: Color(0xFF073163)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Color(0xFF073163)),
@@ -519,213 +574,244 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   )
                 : SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 40),
-                      
-                      Center(
-                        child: Column(
-                          children: [
-                            Image.asset(
-                              'assets/icon.png',
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.contain,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'LMS UNINDRA',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF073163),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Learning Management System',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      
-                      if (_errorMessage != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade700),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: TextStyle(color: Colors.red.shade700),
+                    padding: const EdgeInsets.all(24.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 40),
+                          Center(
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  'assets/icon.png',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.contain,
                                 ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'LMS UNINDRA',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF073163),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Login ${widget.userRole.displayName}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF1756A5),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Learning Management System',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          if (_errorMessage != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline,
+                                      color: Colors.red.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style:
+                                          TextStyle(color: Colors.red.shade700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          TextFormField(
+                            controller: _usernameController,
+                            style: const TextStyle(color: primaryTextColor),
+                            cursorColor: Color(0xFF073163),
+                            decoration: InputDecoration(
+                              labelText: 'Username',
+                              labelStyle:
+                                  const TextStyle(color: secondaryTextColor),
+                              floatingLabelStyle:
+                                  const TextStyle(color: Color(0xFF073163)),
+                              prefixIcon: const Icon(
+                                Icons.person,
+                                color: secondaryTextColor,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF073163), width: 2),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Username tidak boleh kosong';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(color: primaryTextColor),
+                            cursorColor: Color(0xFF073163),
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              labelStyle:
+                                  const TextStyle(color: secondaryTextColor),
+                              floatingLabelStyle:
+                                  const TextStyle(color: Color(0xFF073163)),
+                              prefixIcon: const Icon(
+                                Icons.lock,
+                                color: secondaryTextColor,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: secondaryTextColor,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF073163), width: 2),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Password tidak boleh kosong';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: const Color(0xFF073163),
+                                checkColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Color(0xFF6B7280),
+                                  width: 1.3,
+                                ),
+                              ),
+                              const Text(
+                                'Remember me',
+                                style: TextStyle(color: primaryTextColor),
                               ),
                             ],
                           ),
-                        ),
-                      
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          prefixIcon: const Icon(Icons.person),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF073163), width: 2),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Username tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF073163),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: _isLoading
+                                  ? const SpinKitThreeBounce(
+                                      color: Colors.white,
+                                      size: 20,
+                                    )
+                                  : const Text(
+                                      'Log In',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Lupa Password?',
+                                style: TextStyle(
+                                  color: Color(0xFF073163),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          const SizedBox(height: 32),
+                          Text(
+                            '© ${DateTime.now().year} LMS UNINDRA',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF073163), width: 2),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (value) {
-                              setState(() {
-                                _rememberMe = value ?? false;
-                              });
-                            },
-                            activeColor: const Color(0xFF073163),
-                          ),
-                          const Text('Remember me'),
                         ],
                       ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF073163),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: _isLoading
-                              ? const SpinKitThreeBounce(
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                              : const Text(
-                                  'Log In',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Lupa Password?',
-                            style: TextStyle(
-                              color: Color(0xFF073163),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      
-                      Text(
-                        '© ${DateTime.now().year} LMS UNINDRA',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
       ),
     );
   }

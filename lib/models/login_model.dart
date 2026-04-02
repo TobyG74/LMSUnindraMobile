@@ -1,9 +1,12 @@
+import 'user_role_model.dart';
+
 class LoginRequest {
   final String csrfToken;
   final String hiddenField;
   final String username;
   final String password;
   final String captcha;
+  final UserRole userRole;
   final bool rememberMe;
 
   LoginRequest({
@@ -12,6 +15,7 @@ class LoginRequest {
     required this.username,
     required this.password,
     required this.captcha,
+    required this.userRole,
     this.rememberMe = false,
   });
 

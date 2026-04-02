@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 
 void main() {
@@ -20,14 +20,25 @@ class MyApp extends StatelessWidget {
         title: 'LMS UNINDRA',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primaryColor: const Color(0xFF073163),
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF073163),
+            brightness: Brightness.light,
             primary: const Color(0xFF073163),
           ),
+          scaffoldBackgroundColor: const Color(0xFFF4F7FB),
           useMaterial3: true,
         ),
-        home: const LoginScreen(),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF073163),
+            brightness: Brightness.dark,
+            primary: const Color(0xFF9BC1FF),
+          ),
+          scaffoldBackgroundColor: const Color(0xFF0C1220),
+          useMaterial3: true,
+        ),
+        themeMode: ThemeMode.light,
+        home: const SplashScreen(),
       ),
     );
   }
