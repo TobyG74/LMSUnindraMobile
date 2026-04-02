@@ -4,44 +4,83 @@ Aplikasi mobile buat akses LMS UNINDRA, buat bikin gampang akses materi kuliah d
 
 ## Releases
 
-- [v1.0.2 - Latest Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.2)
+- [v1.0.3 - Latest Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.3)
+- [v1.0.2](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.2)
 - [v1.0.1](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.1)
 - [v1.0.0 - Initial Release](https://github.com/TobyG74/LMSUnindraMobile/releases/tag/v1.0.0)
 
 ## Screenshots
 
-### Login, Dashboard, Presensi
+- [Login](#login)
+- [Dashboard Mahasiswa & Dosen](#dashboard-mahasiswa--dosen)
+- [Mata Kuliah Mahasiswa & Dosen](#mata-kuliah-mahasiswa--dosen)
+- [Laporan Perkuliahan Dosen](#laporan-perkuliahan-dosen)
+- [Jadwal Kuliah & Pertemuan Mahasiswa](#jadwal-kuliah--pertemuan-mahasiswa)
+- [Jadwal Kuliah & Pertemuan Dosen](#jadwal-kuliah--pertemuan-dosen)
+- [Pertemuan: Tugas, External URL, Forum Diskusi Mahasiswa](#pertemuan-tugas-external-url-forum-diskusi-mahasiswa)
+- [Presensi Mahasiswa](#presensi-mahasiswa)
+- [Presensi Dosen](#presensi-dosen)
+- [Cari Mahasiswa & Cari Dosen](#cari-mahasiswa--cari-dosen)
+
+### Login
 <p align="center">
+  <img src="assets/select_login.png" alt="Captcha" width="200"/>
   <img src="assets/login.png" alt="Login" width="200"/>
-  <img src="assets/dashboard.png" alt="Dashboard" width="200"/>
   <img src="assets/reset_password.png" alt="Reset Password" width="200"/>
 </p>
 
-
-### Jadwal Kuliah & Pertemuan
+### Dashboard Mahasiswa & Dosen
 <p align="center">
-  <img src="assets/jadwalkuliah.png" alt="Jadwal Kuliah" width="200"/>
-  <img src="assets/pertemuan.png" alt="Detail Jadwal" width="200"/>
-  <img src="assets/pertemuan_detail.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/mahasiswa_dashboard.png" alt="Dashboard Mahasiswa" width="200"/>
+  <img src="assets/dosen_dashboard.png" alt="Dashboard Dosen" width="200"/>
 </p>
 
-### Pertemuan: Tugas, External URL, Forum Diskusi
+### Mata Kuliah Mahasiswa & Dosen
+<p align="center">
+  <img src="assets/matakuliah.png" alt="Mata Kuliah" width="200"/>
+  <img src="assets/matakuliah_detail.png" alt="Detail Mata Kuliah" width="200"/>
+</p>
+
+### Laporan Perkuliahan Dosen
+<p align="center">
+  <img src="assets/dosen_laporan_perkuliahan.png" alt="Laporan Perkuliahan" width="200"/>
+  <img src="assets/dosen_laporan_perkuliahan_detail.png" alt="Detail Laporan Perkuliahan" width="200"/>
+</p>
+
+### Jadwal Kuliah & Pertemuan Mahasiswa
+<p align="center">
+  <img src="assets/mahasiswa_jadwalkuliah.png" alt="Jadwal Kuliah" width="200"/>
+  <img src="assets/mahasiswa_pertemuan.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/mahasiswa_pertemuan_detail.png" alt="Detail Jadwal" width="200"/>
+</p>
+
+### Jadwal Kuliah & Pertemuan Dosen
+<p align="center">
+  <img src="assets/dosen_jadwalkuliah.png" alt="Jadwal Kuliah" width="200"/>
+  <img src="assets/dosen_pertemuan.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/dosen_pertemuan_detail.png" alt="Detail Jadwal" width="200"/>
+  <img src="assets/dosen_pertemuan_detail_tambahlesson.png" alt="Detail Jadwal" width="200"/>
+</p>
+
+### Pertemuan: Tugas, External URL, Forum Diskusi Mahasiswa
 <p align="center">
   <img src="assets/pertemuan_tugas.png" alt="Tugas" width="200"/>
   <img src="assets/pertemuan_external.png" alt="External URL" width="200"/>
   <img src="assets/pertemuan_forum.png" alt="Forum Diskusi" width="200"/>
 </p>
 
-### Mata Kuliah
+### Presensi Mahasiswa
 <p align="center">
-  <img src="assets/matakuliah.png" alt="Mata Kuliah" width="200"/>
-  <img src="assets/matakuliah_detail.png" alt="Detail Mata Kuliah" width="200"/>
+  <img src="assets/mahasiswa_presensi.png" alt="Presensi Mahasiswa" width="200"/>
+  <img src="assets/mahasiswa_presensi_detail.png" alt="Presensi Mahasiswa" width="200"/>
 </p>
 
-### Presensi & Materi
+### Presensi Dosen
 <p align="center">
-  <img src="assets/presensi.png" alt="Presensi" width="200"/>
-  <img src="assets/profile.png" alt="Profile" width="200"/>
+  <img src="assets/dosen_presensi.png" alt="Presensi Dosen" width="200"/>
+  <img src="assets/dosen_presensi_kelas.png" alt="Presensi Dosen" width="200"/>
+  <img src="assets/dosen_presensi_rekap.png" alt="Presensi Dosen" width="200"/>
+  <img src="assets/dosen_presensi_monitoring.png" alt="Presensi Dosen" width="200"/>
 </p>
 
 ### Cari Mahasiswa & Cari Dosen

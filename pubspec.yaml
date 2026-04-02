@@ -1,7 +1,7 @@
 name: lms_unindra
 description: A Flutter application for LMS UNINDRA
 publish_to: 'none'
-version: 1.0.3+4
+version: 1.0.4+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -35,7 +35,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
-  flutter_native_splash: ^2.4.7
 
 flutter_launcher_icons:
   android: true
@@ -44,23 +43,6 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon.png"
   remove_alpha_ios: true
-
-flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/icon_splash.png
-  android: true
-  ios: false
-  fullscreen: true
-  android_gravity: center
-  image_dark: assets/icon_splash.png
-  color_dark: "#FFFFFF"
-  android_12:
-    image: assets/icon_splash.png
-    color: "#FFFFFF"
-    icon_background_color: "#FFFFFF"
-    image_dark: assets/icon_splash.png
-    color_dark: "#FFFFFF"
-    icon_background_color_dark: "#FFFFFF"
 
 flutter:
   uses-material-design: true
