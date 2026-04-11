@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart' as html_dom;
 
 class ForumScreen extends StatefulWidget {
   final String encryptedUrl;
@@ -87,13 +88,22 @@ class _ForumScreenState extends State<ForumScreen> {
     setState(() => _isSending = true);
 
     try {
+      await _apiService.submitForumReply(
+        parentId: _replyingTo!['parent_id']?.toString() ?? '0',
+        kdJdwEnc: _replyingTo!['kd_jdw_enc']?.toString() ?? '',
+        idAktifitas: _replyingTo!['id_aktifitas']?.toString() ?? '',
+        replyId: _replyingTo!['reply_id']?.toString() ?? '',
+        forumNama: _replyingTo!['forum_nama']?.toString() ?? '',
+        message: _messageController.text.trim(),
+      );
+
       if (mounted) {
-        _showSnackBar('Pesan berhasil dikirim');
         _messageController.clear();
-        
-        await Future.delayed(const Duration(milliseconds: 500));
+        _setDefaultReplyTarget();
+        _showSnackBar('Pesan berhasil dikirim');
+
         await _loadForumDetail();
-        
+
         await Future.delayed(const Duration(milliseconds: 300));
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -130,68 +140,77 @@ class _ForumScreenState extends State<ForumScreen> {
 
 
   Widget _buildFormattedText(String htmlText) {
-    if (htmlText.isEmpty) {
-      return const Text('');
+    if (htmlText.isEmpty) return const Text('');
+
+    if (!htmlText.contains('<')) {
+      return Text(
+        htmlText.trim(),
+        style: const TextStyle(fontSize: 14, height: 1.5),
+      );
     }
-    
+
     try {
       final document = html_parser.parse(htmlText);
       final body = document.body;
-      
-      if (body == null) {
-        return Text(htmlText);
+      if (body == null || body.text.trim().isEmpty) {
+        final stripped = htmlText.replaceAll(RegExp(r'<[^>]+>'), '').trim();
+        return Text(stripped, style: const TextStyle(fontSize: 14, height: 1.5));
       }
-      
-      // Cek apakah ada konten di body
-      if (body.text.trim().isEmpty) {
-        return Text(htmlText);
+
+      final paragraphs = <String>[];
+      for (final node in body.nodes) {
+        if (node.nodeType == 3) {
+          final t = (node.text ?? '').trim();
+          if (t.isNotEmpty) paragraphs.add(t);
+        } else if (node.nodeType == 1 && node is html_dom.Element) {
+          final tag = node.localName?.toLowerCase() ?? '';
+          if (tag == 'br') {
+            if (paragraphs.isNotEmpty && paragraphs.last.isNotEmpty) {
+              paragraphs.add('');
+            }
+          } else {
+            final text = node.text.trim();
+            if (text.isNotEmpty) paragraphs.add(text);
+          }
+        }
       }
-      
-      return _buildTextSpanFromHtml(body);
+
+      // Collapse consecutive empty strings
+      final clean = <String>[];
+      for (final p in paragraphs) {
+        if (p.isEmpty && clean.isNotEmpty && clean.last.isEmpty) continue;
+        clean.add(p);
+      }
+      // Trim leading/trailing empty
+      while (clean.isNotEmpty && clean.first.isEmpty) clean.removeAt(0);
+      while (clean.isNotEmpty && clean.last.isEmpty) clean.removeLast();
+
+      if (clean.isEmpty) {
+        final stripped = htmlText.replaceAll(RegExp(r'<[^>]+>'), '').trim();
+        return Text(stripped, style: const TextStyle(fontSize: 14, height: 1.5));
+      }
+
+      if (clean.length == 1) {
+        return Text(clean.first, style: const TextStyle(fontSize: 14, height: 1.5));
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < clean.length; i++) ...[
+            if (clean[i].isEmpty)
+              const SizedBox(height: 4)
+            else
+              Text(clean[i], style: const TextStyle(fontSize: 14, height: 1.5)),
+          ],
+        ],
+      );
     } catch (e) {
-      return Text(htmlText);
+      return Text(htmlText, style: const TextStyle(fontSize: 14, height: 1.5));
     }
   }
 
-  Widget _buildTextSpanFromHtml(dynamic element) {
-    final spans = <InlineSpan>[];
-    
-    for (var node in element.nodes) {
-      if (node.nodeType == 3) { // Text node
-        spans.add(TextSpan(text: node.text));
-      } else if (node.nodeType == 1) { // Element node
-        final tag = (node as dynamic).localName;
-        final text = node.text;
-        
-        TextStyle style = const TextStyle(fontSize: 14, color: Colors.black87);
-        
-        switch (tag) {
-          case 'strong':
-          case 'b':
-            style = style.copyWith(fontWeight: FontWeight.bold);
-            break;
-          case 'em':
-          case 'i':
-            style = style.copyWith(fontStyle: FontStyle.italic);
-            break;
-          case 's':
-          case 'strike':
-          case 'del':
-            style = style.copyWith(decoration: TextDecoration.lineThrough);
-            break;
-        }
-        
-        spans.add(TextSpan(text: text, style: style));
-      }
-    }
-    
-    return RichText(
-      text: TextSpan(
-        children: spans,
-        style: const TextStyle(fontSize: 14, color: Colors.black87),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

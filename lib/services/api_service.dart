@@ -3637,8 +3637,14 @@ class ApiService {
 
         final forumTitle =
             document.querySelector('.attachment-heading')?.text.trim() ?? '';
-        final forumContent =
-            document.querySelector('.callout p')?.text.trim() ?? '';
+        final calloutDiv = document.querySelector('.callout');
+        final forumContent = calloutDiv != null
+            ? calloutDiv
+                .querySelectorAll('p')
+                .map((p) => p.text.trim())
+                .where((t) => t.isNotEmpty)
+                .join('\n\n')
+            : (document.querySelector('.callout p')?.text.trim() ?? '');
 
         mainPost['title'] = forumTitle;
         mainPost['content'] = forumContent;
