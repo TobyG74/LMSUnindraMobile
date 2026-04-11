@@ -292,7 +292,8 @@ class _JadwalScreenState extends State<JadwalScreen> {
     'Praktik Laboratorium Konseling Perorangan': Colors.deepPurple,
     'Studi Kasus dalam BK': Colors.cyan,
     'English for Guidance': Colors.lightBlue,
-    'Layanan BK di Pendidikan Menengah dan Tinggi': Colors.indigo,    'Desain Elementer Dwimatra': Colors.purple,
+    'Layanan BK di Pendidikan Menengah dan Tinggi': Colors.indigo,
+    'Desain Elementer Dwimatra': Colors.purple,
     'Pengantar Ilmu Komunikasi': Colors.orange,
     'Bahasa Inggris Desain': Colors.lightBlue,
     'Pengantar Budaya Nusantara': Colors.brown,
@@ -337,7 +338,11 @@ class _JadwalScreenState extends State<JadwalScreen> {
       final html = await _apiService.fetchDashboardPage();
       final items = _parseJadwalHtml(html);
 
-      await _notificationService.scheduleTodayClassReminders(items);
+      try {
+        await _notificationService.scheduleWeeklyClassReminders(items);
+      } catch (_) {
+        // Ignore notification scheduling errors so jadwal data can still render.
+      }
 
       setState(() {
         _jadwalList = items;

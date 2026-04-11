@@ -2,8 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialise notifications and re-schedule any saved jadwal reminders so
+  // they survive app restarts without requiring the user to open Jadwal screen.
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+  try {
+    final savedJadwal = await notificationService.loadSavedJadwal();
+    if (savedJadwal.isNotEmpty) {
+      await notificationService.scheduleWeeklyClassReminders(savedJadwal);
+    }
+  } catch (_) {
+    // Never block app launch due to notification errors.
+  }
+
   runApp(const MyApp());
 }
 
