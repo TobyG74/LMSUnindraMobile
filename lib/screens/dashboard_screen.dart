@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -32,6 +33,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _userPhotoUrl;
   bool _isLoadingUserData = true;
   bool _animateCards = false;
+  int _newMeetingCount = 0;
+  Set<String> _newMeetingLinks = {};
 
   @override
   void initState() {
@@ -81,6 +84,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (imgTag != null) {
           _userPhotoUrl = imgTag.attributes['src'];
         }
+      }
+
+      // Count new (unread) pertemuan — only relevant for mahasiswa.
+      try {
+        final role =
+            Provider.of<AuthService>(context, listen: false).currentUserRole;
+        if (role == UserRole.mahasiswa) {
+          final allLinks = document
+              .querySelectorAll('a[href*="pertemuan/pke/"]')
+              .map((a) {
+                final href = a.attributes['href'] ?? '';
+                final m = RegExp(r'pertemuan/pke/(.+)$').firstMatch(href);
+                return m?.group(1) ?? '';
+              })
+              .where((s) => s.isNotEmpty)
+              .toSet();
+
+          final prefs = await SharedPreferences.getInstance();
+          final opened =
+              (prefs.getStringList('opened_pertemuan') ?? []).toSet();
+          final newLinks = allLinks.difference(opened);
+          _newMeetingCount = newLinks.length;
+          _newMeetingLinks = newLinks;
+        }
+      } catch (_) {
+        // Non-critical — ignore errors in new-meeting count.
       }
 
       setState(() {
@@ -375,6 +404,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildNewMeetingBanner(
+      BuildContext context, int count, bool isDark) {
+    final bgColor =
+        isDark ? const Color(0xFF0F2033) : const Color(0xFFEEF5FF);
+    final borderColor =
+        isDark ? const Color(0xFF1E3A5F) : const Color(0xFFBDD5F8);
+    final textColor =
+        isDark ? const Color(0xFF90C2FF) : const Color(0xFF0A52A8);
+    final subtitleColor =
+        isDark ? const Color(0xFF6A9FCF) : const Color(0xFF4070B0);
+
+    return GestureDetector(
+      onTap: () async {
+        // Mark all current new pertemuan as seen so banner disappears
+        final prefs = await SharedPreferences.getInstance();
+        final opened = (prefs.getStringList('opened_pertemuan') ?? []).toSet();
+        opened.addAll(_newMeetingLinks);
+        await prefs.setStringList('opened_pertemuan', opened.toList());
+        if (mounted) {
+          setState(() {
+            _newMeetingCount = 0;
+            _newMeetingLinks = {};
+          });
+        }
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const JadwalScreen(),
+            ),
+          );
+        }
+      },
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        offset: _animateCards ? Offset.zero : const Offset(0, -0.1),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 420),
+          curve: Curves.easeOut,
+          opacity: _animateCards ? 1 : 0,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: borderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1565C0).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_active_rounded,
+                    size: 20,
+                    color: Color(0xFF1565C0),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$count Pertemuan Baru Tersedia',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ketuk untuk melihat mata kuliah',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: subtitleColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 13,
+                  color: subtitleColor,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final role = context.watch<AuthService>().currentUserRole;
@@ -649,11 +786,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 70),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  if (!isDosen && _newMeetingCount > 0) ...[
+                    _buildNewMeetingBanner(
+                        context, _newMeetingCount, isDark),
+                    const SizedBox(height: 12),
+                  ],
                   Row(
                     children: [
                       Container(
@@ -675,7 +817,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -687,7 +829,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ? _buildDosenMenuCards(context)
                         : _buildMahasiswaMenuCards(context),
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
