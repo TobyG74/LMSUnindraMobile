@@ -90,30 +90,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
-      // Count new (unread) pertemuan — only relevant for mahasiswa.
       try {
         final role =
             Provider.of<AuthService>(context, listen: false).currentUserRole;
         if (role == UserRole.mahasiswa) {
-          final allLinks = document
-              .querySelectorAll('a[href*="pertemuan/pke/"]')
-              .map((a) {
-                final href = a.attributes['href'] ?? '';
-                final m = RegExp(r'pertemuan/pke/(.+)$').firstMatch(href);
-                return m?.group(1) ?? '';
-              })
-              .where((s) => s.isNotEmpty)
-              .toSet();
-
           final prefs = await SharedPreferences.getInstance();
           final opened =
               (prefs.getStringList('opened_pertemuan') ?? []).toSet();
-          final newLinks = allLinks.difference(opened);
+
+          final newLinks = <String>{};
+          final treeviews = document.querySelectorAll('li.treeview');
+
+          for (final treeview in treeviews) {
+            final menu = treeview.querySelector('ul.treeview-menu');
+            if (menu == null) continue;
+
+            final items = <({int ke, String encUrl})>[];
+            for (final li in menu.querySelectorAll('li')) {
+              final link =
+                  li.querySelector('a[href*="pertemuan/pke/"]');
+              if (link == null) continue;
+              final href = link.attributes['href'] ?? '';
+              final mUrl =
+                  RegExp(r'pertemuan/pke/(.+)$').firstMatch(href);
+              if (mUrl == null) continue;
+              final encUrl = mUrl.group(1) ?? '';
+
+              final spanText =
+                  link.querySelector('span')?.text.trim() ?? '';
+              final mKe = RegExp(
+                r'Pertemuan\s+(\d+)',
+                caseSensitive: false,
+              ).firstMatch(spanText);
+              final ke = int.tryParse(mKe?.group(1) ?? '0') ?? 0;
+
+              if (encUrl.isNotEmpty && ke > 0) {
+                items.add((ke: ke, encUrl: encUrl));
+              }
+            }
+
+            if (items.isEmpty) continue;
+
+            final maxKe = items.map((e) => e.ke).reduce(
+              (a, b) => a > b ? a : b,
+            );
+            for (final item in items) {
+              if (item.ke == maxKe && !opened.contains(item.encUrl)) {
+                newLinks.add(item.encUrl);
+              }
+            }
+          }
+
           _newMeetingCount = newLinks.length;
           _newMeetingLinks = newLinks;
         }
       } catch (_) {
-        // Non-critical — ignore errors in new-meeting count.
+        // ignore error
       }
 
       setState(() {
@@ -421,9 +453,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return GestureDetector(
       onTap: () async {
-        // Mark all current new pertemuan as seen so banner disappears
         final prefs = await SharedPreferences.getInstance();
-        final opened = (prefs.getStringList('opened_pertemuan') ?? []).toSet();
+        final opened =
+            (prefs.getStringList('opened_pertemuan') ?? []).toSet();
         opened.addAll(_newMeetingLinks);
         await prefs.setStringList('opened_pertemuan', opened.toList());
         if (mounted) {
