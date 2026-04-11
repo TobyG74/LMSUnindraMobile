@@ -9,6 +9,7 @@ class UpdateService {
 
   static const String _lastCheckKey = 'last_update_check';
   static const String _skipVersionKey = 'skip_version';
+  static const String _remindLaterKey = 'update_remind_later';
 
   Future<bool> shouldCheckUpdate() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,6 +39,25 @@ class UpdateService {
   Future<void> clearSkipVersion() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_skipVersionKey);
+  }
+
+  Future<void> setRemindLater() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_remindLaterKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<bool> isRemindLaterActive() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedAt = prefs.getInt(_remindLaterKey) ?? 0;
+    if (savedAt == 0) return false;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - savedAt;
+    return elapsed < 24 * 60 * 60 * 1000;
+  }
+
+  Future<bool> shouldShowUpdateDialog(String version) async {
+    if (await isVersionSkipped(version)) return false;
+    if (await isRemindLaterActive()) return false;
+    return true;
   }
 
   Future<UpdateInfo?> checkForUpdate() async {

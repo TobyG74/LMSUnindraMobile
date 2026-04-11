@@ -191,8 +191,14 @@ class UpdateDialog extends StatelessWidget {
         TextButton(
           onPressed: updateInfo.updateRequired
               ? null
-              : () => Navigator.of(context).pop(),
-          child: const Text('Nanti'),
+              : () async {
+                  final updateService = UpdateService();
+                  await updateService.setRemindLater();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+          child: const Text('Ingatkan nanti'),
         ),
         ElevatedButton.icon(
           onPressed: () async {

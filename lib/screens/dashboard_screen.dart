@@ -60,11 +60,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final updateInfo = await updateService.checkForUpdate();
     if (updateInfo != null && mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: !updateInfo.updateRequired,
-        builder: (context) => UpdateDialog(updateInfo: updateInfo),
-      );
+      final shouldShow =
+          await updateService.shouldShowUpdateDialog(updateInfo.latestVersion);
+      if (shouldShow && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: !updateInfo.updateRequired,
+          builder: (context) => UpdateDialog(updateInfo: updateInfo),
+        );
+      }
     }
   }
 
