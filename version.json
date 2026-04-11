@@ -1,17 +1,17 @@
 {
-  "version": "1.0.4",
-  "versionCode": 5,
-  "releaseDate": "2026-04-02",
+  "version": "1.0.5",
+  "versionCode": 6,
+  "releaseDate": "2026-04-11",
   "updateRequired": false,
-  "updateTitle": "Update Tersedia v1.0.4",
-  "updateMessage": "Versi 1.0.4 aplikasi LMS Unindra telah tersedia dengan peningkatan UI dan perbaikan fitur akademik.",
-  "downloadUrl": "https://github.com/TobyG74/LMSUnindraMobile/releases/download/v1.0.4/LMS-UNINDRA-v1.0.4.apk",
+  "updateTitle": "Update Tersedia v1.0.5",
+  "updateMessage": "Versi 1.0.5 aplikasi LMS Unindra telah tersedia dengan perbaikan notifikasi jadwal, fitur forum, dan dashboard.",
+  "downloadUrl": "https://github.com/TobyG74/LMSUnindraMobile/releases/download/v1.0.5/LMS-UNINDRA-v1.0.5.apk",
   "changelog": [
-    "Penambahan modul Laporan Perkuliahan dosen (/rps): list, detail, cetak, generate, ubah, dan hapus",
-    "Penyempurnaan form Ubah Laporan dengan date picker dan time range picker",
-    "Perapihan tampilan kartu dashboard dan daftar laporan agar lebih compact dan konsisten",
-    "Perbaikan sinkronisasi icon mata kuliah berdasarkan normalisasi nama dari LMS",
-    "Pemulihan tampilan Presensi Mahasiswa agar kembali seperti versi referensi",
-    "Perbaikan parser untuk mencegah crash type mismatch pada beberapa halaman"
+    "Perbaikan notifikasi jadwal mingguan berulang dan notifikasi saat kelas mulai",
+    "Notifikasi jadwal tetap aktif setelah aplikasi di-restart",
+    "Perbaikan fitur kirim pesan forum yang sebelumnya tidak terkirim ke server",
+    "Perbaikan tampilan konten forum yang sebelumnya terpotong",
+    "Penambahan banner pertemuan baru di dashboard khusus mahasiswa",
+    "Perbaikan jarak tampilan Akses Cepat pada dashboard"
   ]
 }
