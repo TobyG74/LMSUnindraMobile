@@ -7,8 +7,6 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialise notifications and re-schedule any saved jadwal reminders so
-  // they survive app restarts without requiring the user to open Jadwal screen.
   final notificationService = NotificationService();
   await notificationService.initialize();
   try {
@@ -17,7 +15,7 @@ void main() async {
       await notificationService.scheduleWeeklyClassReminders(savedJadwal);
     }
   } catch (_) {
-    // Never block app launch due to notification errors.
+    // ignore error
   }
 
   runApp(const MyApp());
