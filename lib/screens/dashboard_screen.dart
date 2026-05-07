@@ -106,6 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (menu == null) continue;
 
             final items = <({int ke, String encUrl})>[];
+            int _fallbackIndex = 0;
             for (final li in menu.querySelectorAll('li')) {
               final link =
                   li.querySelector('a[href*="pertemuan/pke/"]');
@@ -118,13 +119,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               final spanText =
                   link.querySelector('span')?.text.trim() ?? '';
+              // Match 'Pertemuan 4', 'Pertemuan ke-4', 'Pertemuan Ke 4', etc.
               final mKe = RegExp(
-                r'Pertemuan\s+(\d+)',
+                r'Pertemuan[^\d]*(\d+)',
                 caseSensitive: false,
               ).firstMatch(spanText);
-              final ke = int.tryParse(mKe?.group(1) ?? '0') ?? 0;
+              _fallbackIndex++;
+              // Use angka from title, or fallback ke urutan list
+              final ke = int.tryParse(mKe?.group(1) ?? '') ?? _fallbackIndex;
 
-              if (encUrl.isNotEmpty && ke > 0) {
+              if (encUrl.isNotEmpty) {
                 items.add((ke: ke, encUrl: encUrl));
               }
             }

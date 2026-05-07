@@ -107,8 +107,9 @@ class _PertemuanListMahasiswaScreenState
             final pertemuanSpan = link.querySelector('span');
             final title = pertemuanSpan?.text.trim() ?? link.text.trim();
 
+            // Match 'Pertemuan 4', 'Pertemuan ke-4', 'Pertemuan Ke 4', dll.
             final pertemuanMatch = RegExp(
-              r'Pertemuan\s+(\d+)',
+              r'Pertemuan[^\d]*(\d+)',
               caseSensitive: false,
             ).firstMatch(title);
             int? pertemuanKe;
@@ -230,17 +231,28 @@ class _PertemuanListMahasiswaScreenState
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final pertemuan = _pertemuanList[index];
-                            final maxPertemuanKe = _pertemuanList
-                                .where((p) => p.pertemuanKe != null)
-                                .map((p) => p.pertemuanKe!)
-                                .fold<int>(
-                                  0,
-                                  (max, current) =>
-                                      current > max ? current : max,
-                                );
-                            final isLatest =
-                                pertemuan.pertemuanKe == maxPertemuanKe &&
-                                    maxPertemuanKe > 0;
+                            // Cari maxPertemuanKe; jika semua null, gunakan
+                            // index terakhir sebagai fallback "terbaru"
+                            final hasAnyKe = _pertemuanList
+                                .any((p) => p.pertemuanKe != null);
+                            final bool isLatest;
+                            if (hasAnyKe) {
+                              final maxPertemuanKe = _pertemuanList
+                                  .where((p) => p.pertemuanKe != null)
+                                  .map((p) => p.pertemuanKe!)
+                                  .fold<int>(
+                                    0,
+                                    (max, current) =>
+                                        current > max ? current : max,
+                                  );
+                              isLatest =
+                                  pertemuan.pertemuanKe == maxPertemuanKe &&
+                                      maxPertemuanKe > 0;
+                            } else {
+                              // Tidak ada angka pertemuan — anggap item
+                              // terakhir di list sebagai yang terbaru
+                              isLatest = index == _pertemuanList.length - 1;
+                            }
                             final isNew = isLatest &&
                                 !_openedPertemuan
                                     .contains(pertemuan.encryptedUrl);
