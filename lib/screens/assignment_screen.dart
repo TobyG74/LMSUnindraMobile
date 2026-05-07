@@ -55,24 +55,11 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     }
 
     try {
-      // Format: "Senin, 20 Januari 2026, 23:59"
-      final parts = deadlineStr.split(',');
-      if (parts.length < 3) return null;
+      final str = deadlineStr.trim();
 
-      final datePart = parts[1].trim(); // "20 Januari 2026"
-      final timePart = parts[2].trim(); // "23:59"
-
-      final dateComponents = datePart.split(' ');
-      if (dateComponents.length < 3) return null;
-
-      final day = int.tryParse(dateComponents[0]);
-      final monthName = dateComponents[1];
-      final year = int.tryParse(dateComponents[2]);
-
-      if (day == null || year == null) return null;
-
-      // Map bulan Indonesia ke angka
+      // Map bulan (nama Indonesia penuh + singkatan Inggris) ke angka
       const months = {
+        // Indonesia
         'Januari': 1,
         'Februari': 2,
         'Maret': 3,
@@ -85,16 +72,44 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
         'Oktober': 10,
         'November': 11,
         'Desember': 12,
+        // Inggris singkat (dari LMS)
+        'Jan': 1,
+        'Feb': 2,
+        'Mar': 3,
+        'Apr': 4,
+        'May': 5,
+        'Jun': 6,
+        'Jul': 7,
+        'Aug': 8,
+        'Sep': 9,
+        'Oct': 10,
+        'Nov': 11,
+        'Dec': 12,
       };
+
+      // Cari pola tanggal: "20 Januari 2026"
+      final dateRegex = RegExp(r'(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})');
+      final dateMatch = dateRegex.firstMatch(str);
+      if (dateMatch == null) return null;
+
+      final day = int.tryParse(dateMatch.group(1)!);
+      final monthName = dateMatch.group(2)!;
+      final year = int.tryParse(dateMatch.group(3)!);
+
+      if (day == null || year == null) return null;
 
       final month = months[monthName];
       if (month == null) return null;
 
-      final timeComponents = timePart.split(':');
-      if (timeComponents.length < 2) return null;
+      // Cari pola waktu: "23:59" atau "23.59" setelah tanggal
+      final afterDate = str.substring(dateMatch.end);
+      final timeRegex = RegExp(r'(\d{1,2})[:\.](\d{2})');
+      final timeMatch = timeRegex.firstMatch(afterDate);
 
-      final hour = int.tryParse(timeComponents[0]);
-      final minute = int.tryParse(timeComponents[1]);
+      if (timeMatch == null) return null;
+
+      final hour = int.tryParse(timeMatch.group(1)!);
+      final minute = int.tryParse(timeMatch.group(2)!);
 
       if (hour == null || minute == null) return null;
 
