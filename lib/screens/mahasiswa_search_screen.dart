@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/mahasiswa_search_model.dart';
 import '../services/api_service.dart';
+import 'cf_challenge_screen.dart';
 
 class MahasiswaSearchScreen extends StatefulWidget {
   const MahasiswaSearchScreen({super.key});
@@ -37,7 +38,25 @@ class _MahasiswaSearchScreenState extends State<MahasiswaSearchScreen> {
     });
 
     try {
-      final results = await _apiService.searchMahasiswa(query);
+      List<MahasiswaSearchResult> results;
+      try {
+        results = await _apiService.searchMahasiswa(query);
+      } on CloudflareChallengeException catch (e) {
+        // cookie lama expired/belum ada: minta user selesaikan captcha, lalu ulangi sekali
+        if (!mounted) return;
+        final solved = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => CfChallengeScreen(url: e.url)),
+        );
+        if (solved != true) {
+          setState(() {
+            _errorMessage = 'Verifikasi Cloudflare dibatalkan';
+            _isLoading = false;
+            _searchResults = [];
+          });
+          return;
+        }
+        results = await _apiService.searchMahasiswa(query);
+      }
       setState(() {
         _searchResults = results;
         _isLoading = false;

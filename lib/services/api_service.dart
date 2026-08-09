@@ -12,6 +12,16 @@ import '../models/mahasiswa_search_model.dart';
 import '../models/dosen_search_model.dart';
 import '../models/dosen_detail_model.dart';
 
+/// Dilempar saat PDDIKTI dijawab Cloudflare ("Just a moment" / verify captcha).
+/// UI harus membuka [url] di WebView agar user menyelesaikan captcha.
+class CloudflareChallengeException implements Exception {
+  final String url;
+  CloudflareChallengeException(this.url);
+
+  @override
+  String toString() => 'Perlu verifikasi Cloudflare';
+}
+
 class ApiService {
   static const String baseUrl = 'https://lms.unindra.ac.id';
   static const String loginUrl = '$baseUrl/login_new';
@@ -3925,24 +3935,52 @@ class ApiService {
   }
 
   // Cari mahasiswa di PDDIKTI
+  // cf_clearance terikat ke User-Agent, jadi WebView challenge WAJIB pakai UA ini juga
+  static const String pddiktiUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0';
+
+  static const String _pddiktiCookieKey = 'pddikti_cf_cookie';
+
+  static Future<String?> getPddiktiCookie() async =>
+      (await SharedPreferences.getInstance()).getString(_pddiktiCookieKey);
+
+  static Future<void> savePddiktiCookie(String cookie) async =>
+      (await SharedPreferences.getInstance())
+          .setString(_pddiktiCookieKey, cookie);
+
   Future<List<MahasiswaSearchResult>> searchMahasiswa(String query) async {
+    final url =
+        'https://api-pddikti.kemdiktisaintek.go.id/pencarian/mhs/$query';
     try {
+      final cookie = await getPddiktiCookie();
       final dio = Dio();
       final response = await dio.get(
-        'https://api-pddikti.kemdiktisaintek.go.id/pencarian/mhs/$query',
+        url,
         options: Options(
+          responseType: ResponseType.plain,
+          validateStatus: (status) => status != null && status < 500,
           headers: {
             'origin': 'https://pddikti.kemdiktisaintek.go.id',
             'referer': 'https://pddikti.kemdiktisaintek.go.id/',
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0',
+            'User-Agent': pddiktiUserAgent,
             'x-user-ip': _generateRandomIp(),
+            if (cookie != null) 'cookie': cookie,
           },
         ),
       );
 
+      final body = response.data?.toString() ?? '';
+      if (body.contains('Just a moment') ||
+          body.contains('challenge-platform') ||
+          body.contains('cf-chl')) {
+        throw CloudflareChallengeException(url);
+      }
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
+        final decoded = jsonDecode(body);
+        // API sekarang membungkus hasil: {"status":"success","data":[...]}
+        final List<dynamic> data =
+            decoded is Map ? (decoded['data'] as List? ?? []) : decoded as List;
         return data
             .map((json) => MahasiswaSearchResult.fromJson(json))
             .toList();
