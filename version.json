@@ -1,11 +1,11 @@
 {
-  "version": "1.0.6",
-  "versionCode": 7,
+  "version": "1.0.7",
+  "versionCode": 8,
   "releaseDate": "2026-05-07",
   "updateRequired": false,
-  "updateTitle": "Update Tersedia v1.0.6",
-  "updateMessage": "Versi 1.0.6 aplikasi LMS Unindra telah tersedia dengan perbaikan pengingat deadline tugas dan badge pertemuan baru.",
-  "downloadUrl": "https://github.com/TobyG74/LMSUnindraMobile/releases/download/v1.0.6/LMS-UNINDRA-v1.0.6.apk",
+  "updateTitle": "Update Tersedia v1.0.7",
+  "updateMessage": "Versi 1.0.7 aplikasi LMS Unindra telah tersedia dengan perbaikan pengingat deadline tugas dan badge pertemuan baru.",
+  "downloadUrl": "https://github.com/TobyG74/LMSUnindraMobile/releases/download/v1.0.7/LMS-UNINDRA-v1.0.7.apk",
   "changelog": [
     "Perbaikan pengingat deadline tugas yang sebelumnya menampilkan error 'Format deadline tidak valid'",
     "Perbaikan badge 'Baru' pada pertemuan yang tidak tampil karena format nama pertemuan berbeda"
